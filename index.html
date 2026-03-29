@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة أ. طه محمود</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <style>
+        :root {
+            --primary: #0056b3;
+            --secondary: #007bff;
+            --bg-color: #f0f2f5;
+            --card-bg: #1e1e24;
+            --yellow-strip: #ffc107;
+            --blue-strip: #0d6efd;
+            --red-strip: #dc3545;
+            --text-dark: #333;
+        }
+
+        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; margin: 0; padding: 0; }
+        body { background-color: #e4e9f0; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
+        .app-container { width: 100%; max-width: 480px; background: var(--bg-color); height: 100vh; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.15); position: relative; }
+        
+        .page { display: none; flex-direction: column; height: 100%; animation: fadeIn 0.3s ease-in-out; }
+        .page.active { display: flex; }
+        .page-content { padding: 15px; flex: 1; overflow-y: auto; scroll-behavior: smooth; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .main-header { background: linear-gradient(135deg, var(--primary), var(--secondary)); padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; z-index: 10; position: relative; }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .user-avatar { width: 45px; height: 45px; background: rgba(255,255,255,0.2); border: 2px solid #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+        .user-name { font-size: 14px; font-weight: 700; }
+        .header-center { flex: 1; text-align: left; padding-left: 10px; }
+        .header-title { color: #ffeb3b; font-size: 20px; font-weight: 900; line-height: 1.2; text-shadow: 1px 1px 3px rgba(0,0,0,0.3); }
+        .header-subtitle { font-size: 12px; font-weight: 600; opacity: 0.9; }
+        
+        /* القائمة المنسدلة */
+        .header-left { display: flex; align-items: center; position: relative; }
+        .menu-btn { background: rgba(255,255,255,0.2); color: white; border: none; font-size: 22px; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .dropdown-menu { display: none; position: absolute; top: 50px; left: 0; background: white; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); width: 170px; overflow: hidden; z-index: 100; animation: fadeIn 0.2s; border: 1px solid #eee; }
+        .dropdown-menu.show { display: block; }
+        .menu-item { padding: 12px 15px; color: var(--text-dark); font-size: 14px; font-weight: bold; cursor: pointer; border-bottom: 1px solid #f0f2f5; transition: background 0.2s; display: flex; align-items: center; gap: 8px; }
+        .menu-item:last-child { border-bottom: none; }
+        .menu-item:hover { background: #f8f9fa; }
+        .menu-item.logout { color: #dc3545; }
+
+        .form-container { padding: 30px 20px; justify-content: center; background: white; }
+        .logo-placeholder { font-size: 50px; text-align: center; margin-bottom: 10px; }
+        h2 { text-align: center; color: var(--primary); margin-bottom: 25px; font-weight: 900; }
+        .input-group { margin-bottom: 15px; }
+        input, textarea { width: 100%; padding: 15px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 12px; font-size: 15px; outline: none; transition: all 0.3s; }
+        input:focus, textarea:focus { border-color: var(--secondary); background: #fff; box-shadow: 0 0 0 3px rgba(0,123,255,0.1); }
+        textarea { resize: vertical; min-height: 100px; }
+        .btn-primary { width: 100%; padding: 15px; background: linear-gradient(135deg, var(--secondary), var(--primary)); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(0,123,255,0.3); }
+        .link { text-align: center; margin-top: 20px; color: var(--secondary); cursor: pointer; font-size: 14px; font-weight: 600; }
+        
+        .post-card { background: var(--card-bg); border-radius: 20px; margin-bottom: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); overflow: hidden; position: relative; }
+        .post-date { background: var(--yellow-strip); color: #000; font-weight: 900; text-align: center; padding: 10px; font-size: 15px; letter-spacing: 0.5px; }
+        .post-content { padding: 20px 15px; }
+        
+        /* زرار الحذف للأدمن */
+        .delete-btn { position: absolute; top: 8px; left: 10px; background: #ff4757; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3); transition: transform 0.2s; z-index: 5; }
+        .delete-btn:hover { transform: scale(1.1); background: #ff6b81; }
+
+        .post-box { background: white; border-radius: 12px; padding: 15px; margin-top: 20px; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .post-box:first-child { margin-top: 5px; }
+        .badge { position: absolute; top: -15px; right: 15px; padding: 5px 20px; border-radius: 8px; color: white; font-weight: bold; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .bg-blue { background: var(--blue-strip); }
+        .bg-red { background: var(--red-strip); }
+        .box-text { color: var(--text-dark); font-size: 16px; font-weight: 700; white-space: pre-wrap; margin-top: 5px; line-height: 1.6; }
+        
+        .admin-section { margin-bottom: 25px; padding: 20px; background: white; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .admin-section h4 { margin-bottom: 15px; color: var(--primary); font-size: 18px; font-weight: 800; border-bottom: 2px solid #f0f2f5; padding-bottom: 10px; }
+        .request-card { background:#f8f9fa; border:1px solid #e9ecef; padding:15px; border-radius:12px; margin-bottom: 10px; }
+        .action-btns { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-accept { flex: 1; padding: 10px; background: #28a745; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-reject { flex: 1; padding: 10px; background: #dc3545; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        
+        .empty-state { text-align: center; color: #777; padding: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+
+    <div id="loginPage" class="page active form-container">
+        <div class="logo-placeholder">👨‍🏫</div>
+        <h2>منصة أ. طه محمود</h2>
+        <form onsubmit="handleLogin(event)">
+            <div class="input-group">
+                <input type="text" id="loginUsername" name="username" autocomplete="username" placeholder="اسم الحساب" required>
+            </div>
+            <div class="input-group">
+                <input type="password" id="loginPassword" name="current-password" autocomplete="current-password" placeholder="كلمة المرور" required>
+            </div>
+            <button type="submit" class="btn-primary">تسجيل الدخول</button>
+        </form>
+        <div class="link" onclick="switchPage('signupPage')">ليس لدي حساب؟ أنشئ حساب الآن</div>
+    </div>
+
+    <div id="signupPage" class="page form-container">
+        <h2>إنشاء حساب جديد</h2>
+        <form onsubmit="handleRegister(event)">
+            <div class="input-group">
+                <input type="text" id="signupName" name="username" autocomplete="username" placeholder="الاسم الكامل (بدون ألقاب)" required>
+            </div>
+            <div class="input-group">
+                <input type="password" id="signupPassword" name="new-password" autocomplete="new-password" placeholder="كلمة المرور" required>
+            </div>
+            <div class="input-group">
+                <input type="password" id="signupConfirm" name="new-password" autocomplete="new-password" placeholder="تأكيد كلمة المرور" required>
+            </div>
+            <button type="submit" class="btn-primary">تأكيد الطلب</button>
+        </form>
+        <div class="link" onclick="switchPage('loginPage')">لدي حساب بالفعل؟ تسجيل الدخول</div>
+    </div>
+
+    <div id="mainPage" class="page">
+        <header class="main-header">
+            <div class="header-right">
+                <div class="user-avatar">👨‍🎓</div>
+                <div class="user-name" id="displayUserName">طالب</div>
+            </div>
+            <div class="header-center">
+                <h1 class="header-title">أ. طه محمود</h1>
+                <p class="header-subtitle">الصف الأول الإعدادي بنين</p>
+            </div>
+            <div class="header-left">
+                <button class="menu-btn" onclick="toggleMenu()" id="mainMenuBtn" style="display:none;">⋮</button>
+                <div id="dropdownMenu" class="dropdown-menu">
+                    <div id="adminLink" class="menu-item" onclick="goToAdmin()">⚙️ لوحة التحكم</div>
+                    <div class="menu-item logout" onclick="logout()">🚪 تسجيل خروج</div>
+                </div>
+            </div>
+        </header>
+        <div class="page-content" id="feedContainer">
+            <div class="empty-state">جاري تحميل المنشورات...</div>
+        </div>
+    </div>
+
+    <div id="adminPage" class="page">
+        <header class="main-header" style="background: linear-gradient(135deg, #1a2980, #26d0ce);">
+            <div class="header-right" style="flex:1;">
+                <h1 class="header-title" style="color:white; font-size:18px;">لوحة تحكم الأدمن</h1>
+            </div>
+            <div class="header-left">
+                <button class="menu-btn" onclick="switchPage('mainPage')" style="font-size:24px; font-weight:bold;">×</button>
+            </div>
+        </header>
+        <div class="page-content">
+            <div class="admin-section">
+                <h4>📝 نشر واجب جديد</h4>
+                <textarea id="postTasmee3" placeholder="اكتب تفاصيل التسميع هنا..."></textarea>
+                <textarea id="postHal" placeholder="اكتب تفاصيل الحل هنا..."></textarea>
+                <button class="btn-primary" style="background: linear-gradient(135deg, #11998e, #38ef7d);" onclick="publishPost()">نشر الآن</button>
+            </div>
+            
+            <div class="admin-section">
+                <h4>👥 طلبات الانضمام</h4>
+                <div id="requestsContainer">
+                    <div class="empty-state">لا توجد طلبات حالياً</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // إعدادات الداتا بيس
+    const firebaseConfig = {
+        apiKey: "AIzaSyC_J9h4iGVrzOESGr-zgh0Qsu7yICEzW7g",
+        authDomain: "taha-mahmoud.firebaseapp.com",
+        projectId: "taha-mahmoud",
+        storageBucket: "taha-mahmoud.firebasestorage.app",
+        messagingSenderId: "722671283037",
+        appId: "1:722671283037:web:226968fa4d3267b39b16b4",
+        measurementId: "G-WZYYCLQDBE"
+    };
+
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+    
+    // متغير عشان نعرف اللي فاتح ده أدمن ولا طالب
+    let currentUserIsAdmin = false;
+
+    // التنقل والتحكم بالقائمة المنسدلة
+    function switchPage(pageId) {
+        document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        document.getElementById('dropdownMenu').classList.remove('show');
+    }
+
+    function toggleMenu() {
+        document.getElementById('dropdownMenu').classList.toggle('show');
+    }
+
+    // قفل القائمة لو ضغطت بره
+    window.onclick = function(event) {
+        if (!event.target.matches('.menu-btn')) {
+            var dropdowns = document.getElementsByClassName("dropdown-menu");
+            for (var i = 0; i < dropdowns.length; i++) {
+                var openDropdown = dropdowns[i];
+                if (openDropdown.classList.contains('show')) {
+                    openDropdown.classList.remove('show');
+                }
+            }
+        }
+    }
+
+    function goToAdmin() {
+        switchPage('adminPage');
+    }
+
+    // تسجيل الخروج
+    function logout() {
+        document.getElementById('loginUsername').value = '';
+        document.getElementById('loginPassword').value = '';
+        currentUserIsAdmin = false; // تصفير حالة الأدمن
+        switchPage('loginPage');
+    }
+
+    // تسجيل الدخول
+    async function handleLogin(e) {
+        e.preventDefault();
+        const user = document.getElementById('loginUsername').value;
+        const pass = document.getElementById('loginPassword').value;
+
+        // الأدمن
+        if (user === 'Admin' && pass === 'Jj1122334455@') {
+            currentUserIsAdmin = true;
+            document.getElementById('mainMenuBtn').style.display = 'flex';
+            document.getElementById('adminLink').style.display = 'flex';
+            document.getElementById('displayUserName').innerText = 'الأدمن';
+            switchPage('mainPage');
+            loadPosts();
+            loadRequests();
+            return;
+        }
+
+        try {
+            const snapshot = await db.collection('users').where('username', '==', user).where('password', '==', pass).get();
+            if (snapshot.empty) {
+                alert('هذا الحساب غير موجود. تأكد من الحروف.');
+                return;
+            }
+
+            const userData = snapshot.docs[0].data();
+            if (userData.status === 'pending') {
+                alert('حسابك قيد المراجعة. يرجى الانتظار.');
+            } else if (userData.status === 'accepted') {
+                currentUserIsAdmin = false;
+                document.getElementById('mainMenuBtn').style.display = 'flex';
+                document.getElementById('adminLink').style.display = 'none';
+                document.getElementById('displayUserName').innerText = userData.username;
+                switchPage('mainPage');
+                loadPosts();
+            } else {
+                alert('تم رفض طلبك.');
+            }
+        } catch (error) {
+            console.error(error);
+            alert("حدث خطأ في الاتصال بقاعدة البيانات.");
+        }
+    }
+
+    // إنشاء الحساب
+    async function handleRegister(e) {
+        e.preventDefault();
+        const name = document.getElementById('signupName').value;
+        const pass = document.getElementById('signupPassword').value;
+        const confirmPass = document.getElementById('signupConfirm').value;
+
+        if (pass !== confirmPass) { alert('كلمتا المرور غير متطابقتين!'); return; }
+
+        try {
+            const check = await db.collection('users').where('username', '==', name).get();
+            if(!check.empty) {
+                alert('هذا الاسم مستخدم بالفعل.');
+                return;
+            }
+
+            await db.collection('users').add({
+                username: name,
+                password: pass,
+                status: 'pending',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            alert('تم إرسال طلبك. سيتم المراجعة خلال 24 ساعة.');
+            switchPage('loginPage');
+        } catch (error) {
+            alert("حدث خطأ في الاتصال بقاعدة البيانات.");
+        }
+    }
+
+    // نشر بوست
+    async function publishPost() {
+        const tasmee3 = document.getElementById('postTasmee3').value;
+        const hal = document.getElementById('postHal').value;
+
+        if(tasmee3 === '' && hal === '') { alert('الرجاء كتابة محتوى للنشر'); return; }
+
+        const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+        const today = new Date().toLocaleDateString('ar-EG', dateOptions);
+
+        try {
+            await db.collection('posts').add({
+                dateText: today,
+                tasmee3: tasmee3,
+                hal: hal,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            document.getElementById('postTasmee3').value = '';
+            document.getElementById('postHal').value = '';
+            alert('تم النشر بنجاح!');
+            switchPage('mainPage');
+        } catch (error) {
+            alert("حدث خطأ أثناء النشر.");
+        }
+    }
+
+    // جلب البوستات (مع إضافة زرار الحذف للأدمن)
+    function loadPosts() {
+        db.collection('posts').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
+            const feed = document.getElementById('feedContainer');
+            feed.innerHTML = '';
+            if(snapshot.empty) { feed.innerHTML = '<div class="empty-state">لا توجد واجبات حالياً</div>'; return; }
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const docId = doc.id; // رقم تعريف المنشور في الداتا بيس
+                
+                // لو اللي فاتح أدمن، حط زرار الحذف، لو طالب سيبها فاضية
+                const deleteButton = currentUserIsAdmin ? `<button class="delete-btn" onclick="deletePost('${docId}')">×</button>` : '';
+
+                const postHTML = `
+                    <div class="post-card">
+                        ${deleteButton}
+                        <div class="post-date">تاريخ النشر: ${data.dateText}</div>
+                        <div class="post-content">
+                            ${data.tasmee3 ? `
+                            <div class="post-box">
+                                <span class="badge bg-blue">تسميع</span>
+                                <div class="box-text">${data.tasmee3}</div>
+                            </div>` : ''}
+                            ${data.hal ? `
+                            <div class="post-box">
+                                <span class="badge bg-red">حل</span>
+                                <div class="box-text">${data.hal}</div>
+                            </div>` : ''}
+                        </div>
+                    </div>
+                `;
+                feed.insertAdjacentHTML('beforeend', postHTML);
+            });
+        });
+    }
+
+    // دالة حذف المنشور
+    async function deletePost(docId) {
+        // رسالة التأكيد
+        const isConfirmed = confirm('هل أنت متأكد من حذف هذا المنشور نهائياً؟');
+        
+        if(isConfirmed) {
+            try {
+                // مسح المنشور من الداتا بيس
+                await db.collection('posts').doc(docId).delete();
+                // مش محتاجين نعمل ريفريش، هو هيختفي لوحده عشان بنستخدم onSnapshot
+            } catch (error) {
+                alert("حدث خطأ أثناء الحذف.");
+            }
+        }
+    }
+
+    // طلبات الانضمام
+    function loadRequests() {
+        db.collection('users').where('status', '==', 'pending').onSnapshot(snapshot => {
+            const container = document.getElementById('requestsContainer');
+            container.innerHTML = ''; 
+            if(snapshot.empty) { container.innerHTML = '<div class="empty-state">لا توجد طلبات معلقة</div>'; return; }
+
+            snapshot.forEach(doc => {
+                const user = doc.data();
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="request-card">
+                        <strong style="color:var(--text-dark); font-size:16px;">طالب: ${user.username}</strong>
+                        <div class="action-btns">
+                            <button class="btn-accept" onclick="updateUserStatus('${doc.id}', 'accepted')">قبول</button>
+                            <button class="btn-reject" onclick="updateUserStatus('${doc.id}', 'rejected')">رفض</button>
+                        </div>
+                    </div>
+                `);
+            });
+        });
+    }
+
+    async function updateUserStatus(docId, status) {
+        try {
+            await db.collection('users').doc(docId).update({ status: status });
+        } catch(e) {
+            alert("حدث خطأ.");
+        }
+    }
+</script>
+
+</body>
+</html>
