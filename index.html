@@ -2,86 +2,148 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
     <title>منصة أ. طه محمود</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Lalezar&display=swap" rel="stylesheet">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <style>
         :root {
-            --primary: #0056b3;
-            --secondary: #007bff;
-            --bg-color: #f0f2f5;
-            --card-bg: #1e1e24;
-            --yellow-strip: #ffc107;
-            --blue-strip: #0d6efd;
-            --red-strip: #dc3545;
-            --text-dark: #333;
+            --primary: #1a2a6c; /* كحلي غامق */
+            --secondary: #b21f1f; /* نبيتي */
+            --accent: #fdbb2d; /* أصفر ذهبي */
+            --bg-color: #f4f7f6;
+            --card-bg: #1e1e24; /* الكروت الغامقة الطرش */
+            --text-dark: #2d3748;
+            --blue-strip: #0052d4;
+            --red-strip: #ff416c;
         }
 
-        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; margin: 0; padding: 0; }
-        body { background-color: #e4e9f0; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
-        .app-container { width: 100%; max-width: 480px; background: var(--bg-color); height: 100vh; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.15); position: relative; }
+        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         
-        .page { display: none; flex-direction: column; height: 100%; animation: fadeIn 0.3s ease-in-out; }
-        .page.active { display: flex; }
-        .page-content { padding: 15px; flex: 1; overflow-y: auto; scroll-behavior: smooth; }
-        
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        body { 
+            background-color: #e0e5ec; 
+            display: flex; 
+            justify-content: center; 
+            height: 100vh; 
+            height: 100dvh; 
+            overflow: hidden; 
+            -webkit-user-select: none; 
+            user-select: none;
+        }
 
-        .main-header { background: linear-gradient(135deg, var(--primary), var(--secondary)); padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; z-index: 10; position: relative; }
-        .header-right { display: flex; align-items: center; gap: 12px; }
-        .user-avatar { width: 45px; height: 45px; background: rgba(255,255,255,0.2); border: 2px solid #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; }
-        .user-name { font-size: 14px; font-weight: 700; }
-        .header-center { flex: 1; text-align: left; padding-left: 10px; }
-        .header-title { color: #ffeb3b; font-size: 20px; font-weight: 900; line-height: 1.2; text-shadow: 1px 1px 3px rgba(0,0,0,0.3); }
-        .header-subtitle { font-size: 12px; font-weight: 600; opacity: 0.9; }
+        .box-text, input, textarea { -webkit-user-select: auto; user-select: auto; }
+
+        .app-container { 
+            width: 100%; 
+            max-width: 480px; 
+            background: var(--bg-color); 
+            height: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+            position: relative; 
+            overflow: hidden; 
+        }
         
-        /* القائمة المنسدلة */
+        /* التعديل الجوهري للسكرول هنا */
+        .page { flex: 1; display: none; flex-direction: column; overflow: hidden; animation: slideIn 0.3s ease; width: 100%; }
+        .page.active { display: flex; }
+        
+        .page-content { 
+            flex: 1; 
+            overflow-y: auto; 
+            overflow-x: hidden; 
+            padding: 15px; 
+            padding-bottom: 90px; 
+            scroll-behavior: smooth; 
+            -webkit-overflow-scrolling: touch; 
+        }
+        
+        .page-content::-webkit-scrollbar { width: 5px; }
+        .page-content::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.2); border-radius: 10px; }
+        
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* الهيدر النبيتي في كحلي */
+        .main-header { background: linear-gradient(135deg, var(--primary), var(--secondary)); padding: 20px 20px 25px; display: flex; align-items: center; justify-content: space-between; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.2); border-bottom-left-radius: 25px; border-bottom-right-radius: 25px; z-index: 10; position: relative; }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .user-avatar { width: 50px; height: 50px; background: rgba(255,255,255,0.25); border: 2px solid #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .user-name { font-size: 15px; font-weight: 900; }
+        .header-center { flex: 1; text-align: left; padding-left: 10px; }
+        
+        .header-title { font-family: 'Lalezar', cursive; color: #fff; font-size: 26px; line-height: 1.1; text-shadow: 2px 2px 4px rgba(0,0,0,0.6); letter-spacing: 1px; }
+        .header-subtitle { font-size: 13px; font-weight: 700; color: #ffeaa7; }
+        
         .header-left { display: flex; align-items: center; position: relative; }
-        .menu-btn { background: rgba(255,255,255,0.2); color: white; border: none; font-size: 22px; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-        .dropdown-menu { display: none; position: absolute; top: 50px; left: 0; background: white; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); width: 170px; overflow: hidden; z-index: 100; animation: fadeIn 0.2s; border: 1px solid #eee; }
-        .dropdown-menu.show { display: block; }
-        .menu-item { padding: 12px 15px; color: var(--text-dark); font-size: 14px; font-weight: bold; cursor: pointer; border-bottom: 1px solid #f0f2f5; transition: background 0.2s; display: flex; align-items: center; gap: 8px; }
+        .menu-btn { background: rgba(0,0,0,0.2); color: white; border: none; font-size: 24px; border-radius: 12px; width: 45px; height: 45px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .dropdown-menu { display: none; position: absolute; top: 55px; left: 0; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 190px; overflow: hidden; z-index: 100; border: 1px solid #eee; }
+        .dropdown-menu.show { display: block; animation: fadeIn 0.2s; }
+        .menu-item { padding: 15px; color: var(--text-dark); font-size: 15px; font-weight: bold; cursor: pointer; border-bottom: 1px solid #f0f2f5; transition: background 0.2s; display: flex; align-items: center; gap: 10px; }
         .menu-item:last-child { border-bottom: none; }
         .menu-item:hover { background: #f8f9fa; }
         .menu-item.logout { color: #dc3545; }
 
-        .form-container { padding: 30px 20px; justify-content: center; background: white; }
-        .logo-placeholder { font-size: 50px; text-align: center; margin-bottom: 10px; }
-        h2 { text-align: center; color: var(--primary); margin-bottom: 25px; font-weight: 900; }
-        .input-group { margin-bottom: 15px; }
-        input, textarea { width: 100%; padding: 15px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 12px; font-size: 15px; outline: none; transition: all 0.3s; }
-        input:focus, textarea:focus { border-color: var(--secondary); background: #fff; box-shadow: 0 0 0 3px rgba(0,123,255,0.1); }
-        textarea { resize: vertical; min-height: 100px; }
-        .btn-primary { width: 100%; padding: 15px; background: linear-gradient(135deg, var(--secondary), var(--primary)); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(0,123,255,0.3); }
-        .link { text-align: center; margin-top: 20px; color: var(--secondary); cursor: pointer; font-size: 14px; font-weight: 600; }
+        /* النماذج */
+        .form-container { padding: 40px 25px; justify-content: center; background: white; }
+        .logo-placeholder { font-size: 60px; text-align: center; margin-bottom: 10px; }
+        h2 { text-align: center; color: var(--primary); margin-bottom: 30px; font-weight: 900; font-size: 24px; }
+        .input-group { margin-bottom: 20px; }
+        input, textarea { width: 100%; padding: 16px; background: #f8f9fa; border: 2px solid #e9ecef; border-radius: 15px; font-size: 15px; outline: none; transition: all 0.3s; font-weight: 600; }
+        input:focus, textarea:focus { border-color: var(--blue-strip); background: #fff; }
+        textarea { resize: none; min-height: 120px; }
         
-        .post-card { background: var(--card-bg); border-radius: 20px; margin-bottom: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); overflow: hidden; position: relative; }
-        .post-date { background: var(--yellow-strip); color: #000; font-weight: 900; text-align: center; padding: 10px; font-size: 15px; letter-spacing: 0.5px; }
+        .btn-primary { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--blue-strip), var(--primary)); color: white; border: none; border-radius: 15px; font-size: 18px; font-weight: 900; cursor: pointer; box-shadow: 0 8px 20px rgba(0,82,212,0.3); transition: transform 0.2s; }
+        .btn-primary:active { transform: scale(0.97); }
+        .link { text-align: center; margin-top: 25px; color: var(--blue-strip); cursor: pointer; font-size: 15px; font-weight: 700; text-decoration: none; }
+        
+        /* كروت المنشورات الغامقة */
+        .post-card { background: var(--card-bg); border-radius: 20px; margin-top: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden; }
+        .post-date { background: linear-gradient(90deg, #fceabb, #f8b500); color: #000; font-weight: 900; text-align: center; padding: 12px; font-size: 16px; }
         .post-content { padding: 20px 15px; }
-        
-        /* زرار الحذف للأدمن */
-        .delete-btn { position: absolute; top: 8px; left: 10px; background: #ff4757; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3); transition: transform 0.2s; z-index: 5; }
-        .delete-btn:hover { transform: scale(1.1); background: #ff6b81; }
 
-        .post-box { background: white; border-radius: 12px; padding: 15px; margin-top: 20px; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .post-box:first-child { margin-top: 5px; }
-        .badge { position: absolute; top: -15px; right: 15px; padding: 5px 20px; border-radius: 8px; color: white; font-weight: bold; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .bg-blue { background: var(--blue-strip); }
-        .bg-red { background: var(--red-strip); }
-        .box-text { color: var(--text-dark); font-size: 16px; font-weight: 700; white-space: pre-wrap; margin-top: 5px; line-height: 1.6; }
+        /* مكان مخصص لزرار الأدمن عشان ميغطيش على حاجة */
+        .admin-controls-strip { background: white; padding: 10px 15px; display: flex; justify-content: flex-end; align-items: center; border-bottom: 1px solid #eee; }
+        .delete-btn { background: #ff4757; color: white; border: none; border-radius: 10px; padding: 5px 15px; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(255,71,87,0.3); }
+
+        .post-box { background: white; border-radius: 15px; padding: 18px; margin-top: 25px; position: relative; border: 1px solid #e9ecef; }
+        .post-box:first-child { margin-top: 10px; }
+        .badge { position: absolute; top: -16px; right: 20px; padding: 6px 25px; border-radius: 10px; color: white; font-weight: 900; font-size: 15px; }
+        .bg-blue { background: linear-gradient(135deg, #36d1dc, #5b86e5); }
+        .bg-red { background: linear-gradient(135deg, #ff416c, #ff4b2b); }
+        .box-text { color: var(--text-dark); font-size: 16px; font-weight: 700; white-space: pre-wrap; margin-top: 5px; line-height: 1.7; }
         
-        .admin-section { margin-bottom: 25px; padding: 20px; background: white; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .admin-section h4 { margin-bottom: 15px; color: var(--primary); font-size: 18px; font-weight: 800; border-bottom: 2px solid #f0f2f5; padding-bottom: 10px; }
-        .request-card { background:#f8f9fa; border:1px solid #e9ecef; padding:15px; border-radius:12px; margin-bottom: 10px; }
-        .action-btns { display: flex; gap: 10px; margin-top: 10px; }
-        .btn-accept { flex: 1; padding: 10px; background: #28a745; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .btn-reject { flex: 1; padding: 10px; background: #dc3545; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        /* لوحة الأدمن */
+        .admin-section { margin-bottom: 25px; padding: 25px; background: white; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
+        .admin-section h4 { margin-bottom: 20px; color: var(--primary); font-size: 20px; font-weight: 900; border-bottom: 3px solid #f0f2f5; padding-bottom: 12px; }
         
-        .empty-state { text-align: center; color: #777; padding: 20px; font-weight: bold; }
+        .action-btns { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-accept { flex: 1; padding: 12px; background: linear-gradient(135deg, #11998e, #38ef7d); color: white; border: none; border-radius: 12px; font-weight: 900; cursor: pointer; }
+        .btn-reject { flex: 1; padding: 12px; background: linear-gradient(135deg, #cb2d3e, #ef473a); color: white; border: none; border-radius: 12px; font-weight: 900; cursor: pointer; }
+
+        /* صفحة السبورة */
+        .upload-btn { background: linear-gradient(135deg, #00b09b, #96c93d); color: white; font-size: 18px; padding: 15px; border-radius: 15px; text-align: center; font-weight: 900; cursor: pointer; margin-bottom: 20px; margin-top: 10px; display: block; border: none; width: 100%; }
+        .board-preview-card { background: white; padding: 20px; border-radius: 20px; display: none; border: 2px dashed #00b09b; }
+        .preview-img { width: 100%; border-radius: 12px; margin-bottom: 15px; max-height: 300px; object-fit: contain; background: #f0f0f0; }
+        
+        .board-post { background: white; border-radius: 20px; overflow: hidden; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .board-header { padding: 15px; background: #f8f9fa; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .board-user { font-weight: 900; color: var(--primary); font-size: 16px; }
+        .board-date { font-size: 13px; color: #666; font-weight: bold; background: #e0e5ec; padding: 5px 10px; border-radius: 8px; }
+        .board-img { width: 100%; display: block; object-fit: cover; max-height: 400px; }
+        .board-actions { padding: 15px; display: flex; gap: 10px; background: white; }
+        .btn-view { flex: 1; padding: 12px; background: #f0f2f5; color: var(--primary); font-weight: 900; border: none; border-radius: 12px; cursor: pointer; }
+        .btn-download { flex: 1; padding: 12px; background: var(--blue-strip); color: white; font-weight: 900; border: none; border-radius: 12px; cursor: pointer; text-decoration: none; text-align: center; display: inline-block; }
+
+        /* مودال الصورة */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center; padding: 15px; }
+        .modal-content { max-width: 100%; max-height: 90vh; border-radius: 10px; }
+        .close-modal { position: absolute; top: 15px; right: 15px; color: white; font-size: 40px; font-weight: bold; cursor: pointer; background: rgba(255,255,255,0.2); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding-bottom: 5px; }
+
+        .empty-state { text-align: center; color: #999; padding: 40px 20px; font-weight: 900; font-size: 18px; }
     </style>
 </head>
 <body>
@@ -100,10 +162,11 @@
             </div>
             <button type="submit" class="btn-primary">تسجيل الدخول</button>
         </form>
-        <div class="link" onclick="switchPage('signupPage')">ليس لدي حساب؟ أنشئ حساب الآن</div>
+        <div class="link" onclick="switchPage('signupPage')">ليس لدي حساب؟ أنشئ حساب</div>
     </div>
 
     <div id="signupPage" class="page form-container">
+        <div class="logo-placeholder">📝</div>
         <h2>إنشاء حساب جديد</h2>
         <form onsubmit="handleRegister(event)">
             <div class="input-group">
@@ -120,55 +183,80 @@
         <div class="link" onclick="switchPage('loginPage')">لدي حساب بالفعل؟ تسجيل الدخول</div>
     </div>
 
+    <header class="main-header" id="globalHeader" style="display: none;">
+        <div class="header-right">
+            <div class="user-avatar">👨‍🎓</div>
+            <div class="user-name" id="displayUserName">طالب</div>
+        </div>
+        <div class="header-center">
+            <h1 class="header-title">أ. طه محمود</h1>
+            <p class="header-subtitle">الصف الأول الإعدادي بنين</p>
+        </div>
+        <div class="header-left">
+            <button class="menu-btn" onclick="toggleMenu()" id="mainMenuBtn">⋮</button>
+            <div id="dropdownMenu" class="dropdown-menu">
+                <div class="menu-item" onclick="switchPage('mainPage')">🏠 الرئيسية (الواجبات)</div>
+                <div class="menu-item" onclick="switchPage('boardPage')">🖼️ سبورة الحصة</div>
+                <div id="adminLink" class="menu-item" onclick="switchPage('adminPage')" style="display:none;">⚙️ إعدادات الأدمن</div>
+                <div class="menu-item logout" onclick="logout()">🚪 تسجيل خروج</div>
+            </div>
+        </div>
+    </header>
+
     <div id="mainPage" class="page">
-        <header class="main-header">
-            <div class="header-right">
-                <div class="user-avatar">👨‍🎓</div>
-                <div class="user-name" id="displayUserName">طالب</div>
-            </div>
-            <div class="header-center">
-                <h1 class="header-title">أ. طه محمود</h1>
-                <p class="header-subtitle">الصف الأول الإعدادي بنين</p>
-            </div>
-            <div class="header-left">
-                <button class="menu-btn" onclick="toggleMenu()" id="mainMenuBtn" style="display:none;">⋮</button>
-                <div id="dropdownMenu" class="dropdown-menu">
-                    <div id="adminLink" class="menu-item" onclick="goToAdmin()">⚙️ لوحة التحكم</div>
-                    <div class="menu-item logout" onclick="logout()">🚪 تسجيل خروج</div>
-                </div>
-            </div>
-        </header>
         <div class="page-content" id="feedContainer">
             <div class="empty-state">جاري تحميل المنشورات...</div>
         </div>
     </div>
 
-    <div id="adminPage" class="page">
-        <header class="main-header" style="background: linear-gradient(135deg, #1a2980, #26d0ce);">
-            <div class="header-right" style="flex:1;">
-                <h1 class="header-title" style="color:white; font-size:18px;">لوحة تحكم الأدمن</h1>
-            </div>
-            <div class="header-left">
-                <button class="menu-btn" onclick="switchPage('mainPage')" style="font-size:24px; font-weight:bold;">×</button>
-            </div>
-        </header>
+    <div id="boardPage" class="page">
         <div class="page-content">
-            <div class="admin-section">
-                <h4>📝 نشر واجب جديد</h4>
-                <textarea id="postTasmee3" placeholder="اكتب تفاصيل التسميع هنا..."></textarea>
-                <textarea id="postHal" placeholder="اكتب تفاصيل الحل هنا..."></textarea>
-                <button class="btn-primary" style="background: linear-gradient(135deg, #11998e, #38ef7d);" onclick="publishPost()">نشر الآن</button>
-            </div>
+            <button class="upload-btn" onclick="document.getElementById('boardFileInput').click()">📸 رفع صورة للسبورة</button>
+            <input type="file" id="boardFileInput" accept="image/*" style="display:none;" onchange="handleImageSelect(event)">
             
-            <div class="admin-section">
-                <h4>👥 طلبات الانضمام</h4>
-                <div id="requestsContainer">
-                    <div class="empty-state">لا توجد طلبات حالياً</div>
+            <div class="board-preview-card" id="boardPreviewCard">
+                <h3 style="text-align:center; color:var(--primary); margin-bottom:15px; font-weight:900;">معاينة ونشر</h3>
+                <img id="previewImage" class="preview-img" src="">
+                <input type="text" id="boardCustomDate" placeholder="اكتب العنوان (مثال: الثلاثاء - الساعة 5)">
+                <div class="action-btns">
+                    <button class="btn-accept" onclick="confirmBoardUpload()">نشر</button>
+                    <button class="btn-reject" onclick="cancelBoardUpload()">إلغاء</button>
                 </div>
+            </div>
+
+            <div id="boardFeedContainer">
+                <div class="empty-state">لا توجد صور حالياً</div>
             </div>
         </div>
     </div>
 
+    <div id="adminPage" class="page">
+        <div class="page-content">
+            <div class="admin-section">
+                <h4>📝 نشر واجب جديد</h4>
+                <input type="text" id="customPostDate" placeholder="اكتب العنوان (مثال: الإثنين 30 مارس)">
+                <textarea id="postTasmee3" placeholder="تفاصيل التسميع..."></textarea>
+                <textarea id="postHal" placeholder="تفاصيل الحل..."></textarea>
+                <button class="btn-primary" onclick="publishPost()">نشر الواجب</button>
+            </div>
+            
+            <div class="admin-section">
+                <h4>🖼️ طلبات صور السبورة</h4>
+                <div id="boardRequestsContainer"></div>
+            </div>
+
+            <div class="admin-section">
+                <h4>👥 طلبات الحسابات</h4>
+                <div id="requestsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div id="imageModal" class="modal">
+    <span class="close-modal" onclick="closeModal()">&times;</span>
+    <img class="modal-content" id="modalImg">
 </div>
 
 <script>
@@ -179,237 +267,249 @@
         projectId: "taha-mahmoud",
         storageBucket: "taha-mahmoud.firebasestorage.app",
         messagingSenderId: "722671283037",
-        appId: "1:722671283037:web:226968fa4d3267b39b16b4",
-        measurementId: "G-WZYYCLQDBE"
+        appId: "1:722671283037:web:226968fa4d3267b39b16b4"
     };
 
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
+    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
     const db = firebase.firestore();
     
-    // متغير عشان نعرف اللي فاتح ده أدمن ولا طالب
     let currentUserIsAdmin = false;
+    let currentUserName = "";
+    let base64ImageToUpload = "";
 
-    // التنقل والتحكم بالقائمة المنسدلة
     function switchPage(pageId) {
         document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
         document.getElementById(pageId).classList.add('active');
         document.getElementById('dropdownMenu').classList.remove('show');
+        document.getElementById('globalHeader').style.display = (pageId === 'loginPage' || pageId === 'signupPage') ? 'none' : 'flex';
+        // سكرول لفوق مع كل تنقل
+        const activeContent = document.querySelector('.page.active .page-content');
+        if(activeContent) activeContent.scrollTop = 0;
     }
 
-    function toggleMenu() {
-        document.getElementById('dropdownMenu').classList.toggle('show');
-    }
+    function toggleMenu() { document.getElementById('dropdownMenu').classList.toggle('show'); }
+    window.onclick = function(e) { if (!e.target.matches('.menu-btn')) { document.querySelectorAll(".dropdown-menu").forEach(d => d.classList.remove('show')); } }
 
-    // قفل القائمة لو ضغطت بره
-    window.onclick = function(event) {
-        if (!event.target.matches('.menu-btn')) {
-            var dropdowns = document.getElementsByClassName("dropdown-menu");
-            for (var i = 0; i < dropdowns.length; i++) {
-                var openDropdown = dropdowns[i];
-                if (openDropdown.classList.contains('show')) {
-                    openDropdown.classList.remove('show');
-                }
-            }
-        }
-    }
-
-    function goToAdmin() {
-        switchPage('adminPage');
-    }
-
-    // تسجيل الخروج
     function logout() {
         document.getElementById('loginUsername').value = '';
         document.getElementById('loginPassword').value = '';
-        currentUserIsAdmin = false; // تصفير حالة الأدمن
+        currentUserIsAdmin = false;
+        currentUserName = "";
         switchPage('loginPage');
     }
 
-    // تسجيل الدخول
     async function handleLogin(e) {
         e.preventDefault();
         const user = document.getElementById('loginUsername').value;
         const pass = document.getElementById('loginPassword').value;
 
-        // الأدمن
-        if (user === 'Admin' && pass === 'Jj1122334455@') {
-            currentUserIsAdmin = true;
-            document.getElementById('mainMenuBtn').style.display = 'flex';
+        // الباسورد الجديد: 2013716
+        if (user === 'Admin' && pass === '2013716') {
+            currentUserIsAdmin = true; currentUserName = "الأدمن";
             document.getElementById('adminLink').style.display = 'flex';
-            document.getElementById('displayUserName').innerText = 'الأدمن';
-            switchPage('mainPage');
-            loadPosts();
-            loadRequests();
+            document.getElementById('displayUserName').innerText = currentUserName;
+            switchPage('mainPage'); loadPosts(); loadBoardPosts(); loadRequests(); loadBoardRequests();
             return;
         }
 
         try {
             const snapshot = await db.collection('users').where('username', '==', user).where('password', '==', pass).get();
-            if (snapshot.empty) {
-                alert('هذا الحساب غير موجود. تأكد من الحروف.');
-                return;
-            }
-
+            if (snapshot.empty) { alert('خطأ في البيانات.'); return; }
             const userData = snapshot.docs[0].data();
-            if (userData.status === 'pending') {
-                alert('حسابك قيد المراجعة. يرجى الانتظار.');
-            } else if (userData.status === 'accepted') {
-                currentUserIsAdmin = false;
-                document.getElementById('mainMenuBtn').style.display = 'flex';
+            if (userData.status === 'pending') { alert('حسابك قيد المراجعة.'); }
+            else if (userData.status === 'accepted') {
+                currentUserIsAdmin = false; currentUserName = userData.username;
                 document.getElementById('adminLink').style.display = 'none';
-                document.getElementById('displayUserName').innerText = userData.username;
-                switchPage('mainPage');
-                loadPosts();
-            } else {
-                alert('تم رفض طلبك.');
-            }
-        } catch (error) {
-            console.error(error);
-            alert("حدث خطأ في الاتصال بقاعدة البيانات.");
-        }
+                document.getElementById('displayUserName').innerText = currentUserName;
+                switchPage('mainPage'); loadPosts(); loadBoardPosts();
+            } else { alert('تم رفض طلبك.'); }
+        } catch (error) { alert("حدث خطأ."); }
     }
 
-    // إنشاء الحساب
     async function handleRegister(e) {
         e.preventDefault();
         const name = document.getElementById('signupName').value;
         const pass = document.getElementById('signupPassword').value;
         const confirmPass = document.getElementById('signupConfirm').value;
-
         if (pass !== confirmPass) { alert('كلمتا المرور غير متطابقتين!'); return; }
-
         try {
             const check = await db.collection('users').where('username', '==', name).get();
-            if(!check.empty) {
-                alert('هذا الاسم مستخدم بالفعل.');
-                return;
-            }
-
-            await db.collection('users').add({
-                username: name,
-                password: pass,
-                status: 'pending',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
+            if(!check.empty) { alert('هذا الاسم مستخدم بالفعل.'); return; }
+            await db.collection('users').add({ username: name, password: pass, status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
             alert('تم إرسال طلبك. سيتم المراجعة خلال 24 ساعة.');
             switchPage('loginPage');
-        } catch (error) {
-            alert("حدث خطأ في الاتصال بقاعدة البيانات.");
-        }
+        } catch (error) { alert("حدث خطأ."); }
     }
 
-    // نشر بوست
     async function publishPost() {
+        const dateText = document.getElementById('customPostDate').value;
         const tasmee3 = document.getElementById('postTasmee3').value;
         const hal = document.getElementById('postHal').value;
-
-        if(tasmee3 === '' && hal === '') { alert('الرجاء كتابة محتوى للنشر'); return; }
-
-        const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
-        const today = new Date().toLocaleDateString('ar-EG', dateOptions);
-
+        if(dateText === '' || tasmee3 === '' && hal === '') { alert('املأ البيانات.'); return; }
         try {
-            await db.collection('posts').add({
-                dateText: today,
-                tasmee3: tasmee3,
-                hal: hal,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            
+            await db.collection('posts').add({ dateText, tasmee3, hal, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+            document.getElementById('customPostDate').value = '';
             document.getElementById('postTasmee3').value = '';
             document.getElementById('postHal').value = '';
-            alert('تم النشر بنجاح!');
-            switchPage('mainPage');
-        } catch (error) {
-            alert("حدث خطأ أثناء النشر.");
-        }
+            alert('تم النشر!');
+        } catch (error) { alert("حدث خطأ."); }
     }
 
-    // جلب البوستات (مع إضافة زرار الحذف للأدمن)
     function loadPosts() {
-        db.collection('posts').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
+        db.collection('posts').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
             const feed = document.getElementById('feedContainer');
             feed.innerHTML = '';
             if(snapshot.empty) { feed.innerHTML = '<div class="empty-state">لا توجد واجبات حالياً</div>'; return; }
-
             snapshot.forEach(doc => {
                 const data = doc.data();
-                const docId = doc.id; // رقم تعريف المنشور في الداتا بيس
+                // الشريط الأبيض الجديد المخصص للأدمن فقط
+                const adminControls = currentUserIsAdmin ? `
+                    <div class="admin-controls-strip">
+                        <button class="delete-btn" onclick="deleteDocument('posts', '${doc.id}')">مسح الواجب 🗑️</button>
+                    </div>` : '';
                 
-                // لو اللي فاتح أدمن، حط زرار الحذف، لو طالب سيبها فاضية
-                const deleteButton = currentUserIsAdmin ? `<button class="delete-btn" onclick="deletePost('${docId}')">×</button>` : '';
-
-                const postHTML = `
+                feed.insertAdjacentHTML('beforeend', `
                     <div class="post-card">
-                        ${deleteButton}
-                        <div class="post-date">تاريخ النشر: ${data.dateText}</div>
+                        ${adminControls}
+                        <div class="post-date">${data.dateText}</div>
                         <div class="post-content">
-                            ${data.tasmee3 ? `
-                            <div class="post-box">
-                                <span class="badge bg-blue">تسميع</span>
-                                <div class="box-text">${data.tasmee3}</div>
-                            </div>` : ''}
-                            ${data.hal ? `
-                            <div class="post-box">
-                                <span class="badge bg-red">حل</span>
-                                <div class="box-text">${data.hal}</div>
-                            </div>` : ''}
+                            ${data.tasmee3 ? `<div class="post-box"><span class="badge bg-blue">تسميع</span><div class="box-text">${data.tasmee3}</div></div>`:''}
+                            ${data.hal ? `<div class="post-box"><span class="badge bg-red">حل</span><div class="box-text">${data.hal}</div></div>`:''}
                         </div>
-                    </div>
-                `;
-                feed.insertAdjacentHTML('beforeend', postHTML);
+                    </div>`);
             });
         });
     }
 
-    // دالة حذف المنشور
-    async function deletePost(docId) {
-        // رسالة التأكيد
-        const isConfirmed = confirm('هل أنت متأكد من حذف هذا المنشور نهائياً؟');
-        
-        if(isConfirmed) {
-            try {
-                // مسح المنشور من الداتا بيس
-                await db.collection('posts').doc(docId).delete();
-                // مش محتاجين نعمل ريفريش، هو هيختفي لوحده عشان بنستخدم onSnapshot
-            } catch (error) {
-                alert("حدث خطأ أثناء الحذف.");
+    // ضغط الصورة (جودة HD)
+    function compressImage(file, callback) {
+        const reader = new FileReader(); reader.readAsDataURL(file);
+        reader.onload = event => {
+            const img = new Image(); img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                canvas.width = (img.width > 1600) ? 1600 : img.width; 
+                canvas.height = img.height * (canvas.width / img.width);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                callback(canvas.toDataURL('image/jpeg', 0.85)); // جودة عالية
             }
         }
     }
 
-    // طلبات الانضمام
-    function loadRequests() {
-        db.collection('users').where('status', '==', 'pending').onSnapshot(snapshot => {
-            const container = document.getElementById('requestsContainer');
-            container.innerHTML = ''; 
-            if(snapshot.empty) { container.innerHTML = '<div class="empty-state">لا توجد طلبات معلقة</div>'; return; }
-
-            snapshot.forEach(doc => {
-                const user = doc.data();
-                container.insertAdjacentHTML('beforeend', `
-                    <div class="request-card">
-                        <strong style="color:var(--text-dark); font-size:16px;">طالب: ${user.username}</strong>
-                        <div class="action-btns">
-                            <button class="btn-accept" onclick="updateUserStatus('${doc.id}', 'accepted')">قبول</button>
-                            <button class="btn-reject" onclick="updateUserStatus('${doc.id}', 'rejected')">رفض</button>
-                        </div>
-                    </div>
-                `);
-            });
+    function handleImageSelect(event) {
+        const file = event.target.files[0]; if(!file) return;
+        compressImage(file, (base64) => {
+            base64ImageToUpload = base64; document.getElementById('previewImage').src = base64;
+            document.getElementById('boardPreviewCard').style.display = 'block'; document.getElementById('boardFileInput').value = '';
+            document.getElementById('boardPreviewCard').scrollIntoView({behavior: "smooth"});
         });
     }
 
-    async function updateUserStatus(docId, status) {
+    function cancelBoardUpload() { base64ImageToUpload = ""; document.getElementById('boardPreviewCard').style.display = 'none'; document.getElementById('boardCustomDate').value = ''; }
+
+    async function confirmBoardUpload() {
+        const dateText = document.getElementById('boardCustomDate').value;
+        if(dateText === "" || base64ImageToUpload === "") { alert("أدخل العنوان."); return; }
+        
+        const status = currentUserIsAdmin ? 'accepted' : 'pending';
+        const successMsg = currentUserIsAdmin ? 'تم النشر مباشرة!' : 'تم إرسال الطلب، وسيتم مراجعته خلال 8 ساعات.';
+        
         try {
-            await db.collection('users').doc(docId).update({ status: status });
-        } catch(e) {
-            alert("حدث خطأ.");
-        }
+            await db.collection('board_requests').add({ uploaderName: currentUserName, dateText, image: base64ImageToUpload, status, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+            cancelBoardUpload(); alert(successMsg);
+        } catch(e) { alert('حدث خطأ.'); }
     }
+
+    function loadBoardPosts() {
+        db.collection('board_requests').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+            const feed = document.getElementById('boardFeedContainer'); 
+            feed.innerHTML = '';
+            let hasPosts = false;
+            
+            if(!snapshot.empty) {
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if(data.status === 'accepted') {
+                        hasPosts = true;
+                        // الشريط الأبيض الجديد المخصص للأدمن في السبورة
+                        const adminControls = currentUserIsAdmin ? `
+                            <div class="admin-controls-strip">
+                                <button class="delete-btn" onclick="deleteDocument('board_requests', '${doc.id}')">مسح الصورة 🗑️</button>
+                            </div>` : '';
+                            
+                        feed.insertAdjacentHTML('beforeend', `
+                            <div class="board-post">
+                                ${adminControls}
+                                <div class="board-header">
+                                    <span class="board-user">من: ${data.uploaderName}</span>
+                                    <span class="board-date">${data.dateText}</span>
+                                </div>
+                                <img src="${data.image}" class="board-img" onclick="openModal('${data.image}')">
+                                <div class="board-actions">
+                                    <button class="btn-view" onclick="openModal('${data.image}')">👁️ مشاهدة</button>
+                                    <a href="${data.image}" download="Board_${data.dateText}.jpg" class="btn-download">⬇️ تحميل</a>
+                                </div>
+                            </div>`);
+                    }
+                });
+            }
+            if(!hasPosts) { feed.innerHTML = '<div class="empty-state">لا توجد صور حالياً</div>'; }
+        });
+    }
+
+    function loadBoardRequests() {
+        db.collection('board_requests').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+            const container = document.getElementById('boardRequestsContainer'); 
+            container.innerHTML = '';
+            let hasReqs = false;
+            
+            if(!snapshot.empty) {
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if(data.status === 'pending') {
+                        hasReqs = true;
+                        container.insertAdjacentHTML('beforeend', `<div class="board-post" style="border: 2px solid var(--accent);">
+                            <div class="board-header">
+                                <span class="board-user">من: ${data.uploaderName}</span>
+                                <span class="board-date">${data.dateText}</span>
+                            </div>
+                            <img src="${data.image}" style="width:100%; max-height:200px; object-fit:contain; background:#f0f4f8;" onclick="openModal('${data.image}')">
+                            <div class="action-btns" style="padding: 15px;">
+                                <button class="btn-accept" onclick="updateDocStatus('board_requests', '${doc.id}', 'accepted')">قبول</button>
+                                <button class="btn-reject" onclick="deleteDocument('board_requests', '${doc.id}', false)">رفض</button>
+                            </div>
+                        </div>`);
+                    }
+                });
+            }
+            if(!hasReqs) { container.innerHTML = '<div class="empty-state">لا توجد طلبات صور</div>'; }
+        });
+    }
+
+    function loadRequests() {
+        db.collection('users').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+            const container = document.getElementById('requestsContainer'); 
+            container.innerHTML = ''; 
+            let hasReqs = false;
+            
+            if(!snapshot.empty) {
+                snapshot.forEach(doc => {
+                    const user = doc.data();
+                    if(user.status === 'pending') {
+                        hasReqs = true;
+                        container.insertAdjacentHTML('beforeend', `<div class="post-box" style="margin-top:10px;"><strong style="color:var(--text-dark);">طالب: ${user.username}</strong><div class="action-btns"><button class="btn-accept" onclick="updateDocStatus('users', '${doc.id}', 'accepted')">قبول</button><button class="btn-reject" onclick="deleteDocument('users', '${doc.id}', false)">رفض</button></div></div>`);
+                    }
+                });
+            }
+            if(!hasReqs) { container.innerHTML = '<div class="empty-state">لا توجد طلبات معلقة</div>'; }
+        });
+    }
+
+    async function updateDocStatus(col, docId, status) { try { await db.collection(col).doc(docId).update({ status }); } catch(e) { alert("حدث خطأ."); } }
+    async function deleteDocument(col, docId, ask = true) { if(ask && !confirm('متأكد من الحذف؟')) return; try { await db.collection(col).doc(docId).delete(); } catch (e) { alert("حدث خطأ."); } }
+
+    function openModal(imgSrc) { document.getElementById("modalImg").src = imgSrc; document.getElementById("imageModal").style.display = "flex"; }
+    function closeModal() { document.getElementById("imageModal").style.display = "none"; }
 </script>
 
 </body>
