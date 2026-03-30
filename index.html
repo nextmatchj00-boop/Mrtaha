@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    
+    <link rel="icon" type="image/png" href="logo.png">
+    
     <title>منصة أ. طه محمود</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Lalezar&display=swap" rel="stylesheet">
     
@@ -277,6 +280,30 @@
     let currentUserName = "";
     let base64ImageToUpload = "";
 
+    // ---------------- الدخول التلقائي (الذاكرة المحلية) ---------------- //
+    window.onload = function() {
+        const savedUser = localStorage.getItem('loggedInUser');
+        const savedIsAdmin = localStorage.getItem('isAdmin') === 'true';
+
+        if (savedUser) {
+            currentUserName = savedUser;
+            currentUserIsAdmin = savedIsAdmin;
+            document.getElementById('displayUserName').innerText = currentUserName;
+            
+            if (currentUserIsAdmin) {
+                document.getElementById('adminLink').style.display = 'flex';
+                loadRequests(); 
+                loadBoardRequests();
+            } else {
+                document.getElementById('adminLink').style.display = 'none';
+            }
+            
+            switchPage('mainPage');
+            loadPosts();
+            loadBoardPosts();
+        }
+    };
+
     function switchPage(pageId) {
         document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
         document.getElementById(pageId).classList.add('active');
@@ -291,6 +318,10 @@
     window.onclick = function(e) { if (!e.target.matches('.menu-btn')) { document.querySelectorAll(".dropdown-menu").forEach(d => d.classList.remove('show')); } }
 
     function logout() {
+        // مسح الذاكرة عند الخروج
+        localStorage.removeItem('loggedInUser');
+        localStorage.removeItem('isAdmin');
+        
         document.getElementById('loginUsername').value = '';
         document.getElementById('loginPassword').value = '';
         currentUserIsAdmin = false;
@@ -305,7 +336,13 @@
 
         // الباسورد الجديد: 2013716
         if (user === 'Admin' && pass === '2013716') {
-            currentUserIsAdmin = true; currentUserName = "الأدمن";
+            currentUserIsAdmin = true; 
+            currentUserName = "الأدمن";
+            
+            // حفظ حساب الأدمن في الذاكرة
+            localStorage.setItem('loggedInUser', currentUserName);
+            localStorage.setItem('isAdmin', 'true');
+
             document.getElementById('adminLink').style.display = 'flex';
             document.getElementById('displayUserName').innerText = currentUserName;
             switchPage('mainPage'); loadPosts(); loadBoardPosts(); loadRequests(); loadBoardRequests();
@@ -318,7 +355,13 @@
             const userData = snapshot.docs[0].data();
             if (userData.status === 'pending') { alert('حسابك قيد المراجعة.'); }
             else if (userData.status === 'accepted') {
-                currentUserIsAdmin = false; currentUserName = userData.username;
+                currentUserIsAdmin = false; 
+                currentUserName = userData.username;
+                
+                // حفظ حساب الطالب في الذاكرة
+                localStorage.setItem('loggedInUser', currentUserName);
+                localStorage.setItem('isAdmin', 'false');
+
                 document.getElementById('adminLink').style.display = 'none';
                 document.getElementById('displayUserName').innerText = currentUserName;
                 switchPage('mainPage'); loadPosts(); loadBoardPosts();
