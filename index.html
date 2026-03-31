@@ -87,7 +87,7 @@
         .post-card { background: var(--card-bg); border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); overflow: hidden; border: 1px solid var(--border-color); }
         .post-date { background: linear-gradient(90deg, #fceabb, #f8b500); color: #000; font-weight: 900; text-align: center; padding: 12px; font-size: 16px; }
         .post-content { padding: 20px 15px; color: var(--text-dark); }
-        .admin-controls-strip { background: var(--card-bg); padding: 10px 15px; display: flex; justify-content: flex-end; align-items: center; border-bottom: 1px solid var(--border-color); }
+        .admin-controls-strip { background: var(--card-bg); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
         .delete-btn { background: #ff4757; color: white; border: none; border-radius: 10px; padding: 5px 15px; font-size: 14px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(255,71,87,0.3); }
         .post-box { background: var(--card-bg); border-radius: 12px; padding: 18px; margin-top: 25px; position: relative; border: 1px solid var(--border-color); }
         .post-box:first-child { margin-top: 10px; }
@@ -122,17 +122,17 @@
         .close-modal { position: absolute; top: 15px; right: 15px; font-size: 24px; font-weight: bold; cursor: pointer; color: var(--text-dark); }
         .empty-state { text-align: center; color: #999; padding: 40px 20px; font-weight: 900; font-size: 18px; }
 
-        /* Exam Builder Specific */
+        /* Analytics Grid (إحصائيات) */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: linear-gradient(135deg, var(--card-bg), var(--input-bg)); padding: 20px 10px; border-radius: 15px; text-align: center; border: 1px solid var(--border-color); box-shadow: 0 5px 15px rgba(0,0,0,0.05); display:flex; flex-direction:column; justify-content:center; align-items:center; }
+        .stat-icon { font-size: 35px; margin-bottom: 10px; }
+        .stat-value { font-size: 28px; font-weight: 900; color: var(--primary); margin-bottom: 5px; }
+        body.dark-mode .stat-value { color: #90cdf4; }
+        .stat-label { font-size: 14px; color: #666; font-weight: bold; }
+        body.dark-mode .stat-label { color: #cbd5e0; }
         .exam-q-block { border: 2px dashed var(--blue-strip); padding: 15px; border-radius: 12px; margin-bottom: 15px; background: var(--input-bg); }
         .bracket-word { font-weight:900; color: var(--red-strip); background: #fee2e2; padding: 2px 8px; border-radius: 5px; font-family: monospace; font-size: 18px; margin-right: 10px; }
         body.dark-mode .bracket-word { background: #7f1d1d; color: #fecaca; }
-
-        /* AI Chat Specific */
-        .chat-msg { max-width: 85%; padding: 12px 15px; border-radius: 15px; font-weight: bold; font-size: 15px; line-height: 1.6; word-wrap: break-word; }
-        .bot-msg { align-self: flex-start; background: var(--card-bg); color: var(--text-dark); border: 1px solid var(--border-color); border-bottom-right-radius: 2px; }
-        .user-msg { align-self: flex-end; background: linear-gradient(135deg, var(--blue-strip), #3b82f6); color: white; border-bottom-left-radius: 2px; }
-        body.dark-mode .bot-msg { background: #2d3748; border-color: #4a5568; }
-        .typing-indicator { display: none; font-style: italic; color: #999; font-size: 14px; margin-top: 5px; align-self: flex-start; }
     </style>
 </head>
 <body>
@@ -176,10 +176,12 @@
             <div id="dropdownMenu" class="dropdown-menu">
                 <div class="menu-item" onclick="switchPage('mainPage')">🏠 الواجبات المنزلية</div>
                 <div class="menu-item" onclick="switchPage('examsListPage')">⏱️ الامتحانات الإلكترونية</div>
-                <div class="menu-item" style="color:var(--blue-strip);" onclick="switchPage('aiChatPage')">🤖 المساعد الذكي (AI)</div>
                 <div class="menu-item" onclick="switchPage('newsPage')">🔴 الأخبار العاجلة</div>
                 <div class="menu-item" onclick="switchPage('boardPage')">🖼️ سبورة الحصة</div>
                 <div class="menu-item" onclick="switchPage('quizPage')">❓ أسئلة اليوم</div>
+                
+                <div id="adminAnalyticsLink" class="menu-item" onclick="switchPage('analyticsPage')" style="display:none; color:var(--blue-strip);">📊 إحصائيات المنصة</div>
+                
                 <div id="adminAccountsLink" class="menu-item" onclick="switchPage('accountsPage')" style="display:none;">👥 إدارة الحسابات</div>
                 <div id="adminLink" class="menu-item" onclick="switchPage('adminPage')" style="display:none;">⚙️ لوحة التحكم</div>
                 <div class="menu-item logout" onclick="logout()">🚪 تسجيل خروج</div>
@@ -188,38 +190,84 @@
     </header>
 
     <div id="mainPage" class="page"><div class="page-content" id="feedContainer"><div class="empty-state">جاري التحميل...</div></div></div>
+    
     <div id="newsPage" class="page"><div class="page-content" id="newsContainer"><div class="empty-state">لا توجد أخبار</div></div></div>
+    
     <div id="quizPage" class="page"><div class="page-content"><button class="leaderboard-btn" onclick="openLeaderboard()">🏆 أوائل المنصة 🏆</button><div id="quizContainer"></div></div></div>
     
-    <div id="aiChatPage" class="page">
-        <div class="page-content" style="display:flex; flex-direction:column; padding-bottom:10px;">
-            <h2 style="color:var(--primary); text-align:center; font-weight:900; margin-bottom:15px; font-size:22px;">🤖 المساعد الذكي</h2>
-            <div id="aiChatHistory" style="flex:1; overflow-y:auto; padding:15px; background:var(--input-bg); border-radius:15px; border:1px solid var(--border-color); margin-bottom:15px; display:flex; flex-direction:column; gap:12px;">
-                <div class="chat-msg bot-msg">أهلاً بيك يا فنان! أنا المساعد الذكي. تقدر تسألني في أي حاجة في المنهج أو بره المنهج، أو ترفع صورة لأي سؤال وهشرحهولك بالتفصيل. 🚀✨</div>
+    <div id="examsListPage" class="page">
+        <div class="page-content">
+            <h2 style="color:var(--primary); text-align:center; margin-bottom:20px; font-weight:900;">⏱️ الامتحانات المتاحة</h2>
+            <div id="examsContainer"><div class="empty-state">لا توجد امتحانات حالياً</div></div>
+        </div>
+    </div>
+
+    <div id="boardPage" class="page">
+        <div class="page-content">
+            <button class="upload-btn" onclick="document.getElementById('boardFileInput').click()">📸 رفع صورة للسبورة</button>
+            <input type="file" id="boardFileInput" accept="image/*" style="display:none;" onchange="handleImageSelect(event)">
+            <div class="board-preview-card post-card" id="boardPreviewCard" style="display:none; padding:20px; border:2px dashed var(--accent);">
+                <h3 style="text-align:center; margin-bottom:15px;">معاينة ونشر</h3>
+                <img id="previewImage" src="" style="width:100%; border-radius:12px; margin-bottom:15px; max-height:300px; object-fit:contain;">
+                <input type="text" id="boardCustomDate" placeholder="العنوان (مثال: الثلاثاء)" style="margin-bottom:15px;">
+                <div class="action-btns"><button class="btn-accept" onclick="confirmBoardUpload()">نشر</button><button class="btn-reject" onclick="cancelBoardUpload()">إلغاء</button></div>
             </div>
-            <div class="typing-indicator" id="aiTypingIndicator">جاري التفكير... 🧠</div>
-            <div id="aiImagePreviewContainer" style="display:none; position:relative; margin-bottom:10px; width:fit-content;">
-                <img id="aiImagePreview" src="" style="max-height:100px; border-radius:10px; border:2px solid var(--primary);">
-                <button onclick="clearAiImage()" style="position:absolute; top:-10px; right:-10px; background:#ff4757; color:white; border:none; border-radius:50%; width:25px; height:25px; cursor:pointer; font-weight:bold;">&times;</button>
+            <div id="boardFeedContainer"><div class="empty-state">لا توجد صور</div></div>
+        </div>
+    </div>
+
+    <div id="analyticsPage" class="page">
+        <div class="page-content">
+            <h2 style="color:var(--primary); text-align:center; margin-bottom:20px; font-weight:900;">📊 إحصائيات المنصة</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-value" id="statStudents">0</div>
+                    <div class="stat-label">إجمالي الطلبة</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🏆</div>
+                    <div class="stat-value" id="statAvgScore">0</div>
+                    <div class="stat-label">متوسط النقاط</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📝</div>
+                    <div class="stat-value" id="statExams">0</div>
+                    <div class="stat-label">عدد الامتحانات</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⏳</div>
+                    <div class="stat-value" id="statPending">0</div>
+                    <div class="stat-label">طلبات معلقة</div>
+                </div>
             </div>
-            <div style="display:flex; gap:10px; align-items:center;">
-                <button class="menu-btn" style="background:linear-gradient(135deg, #00b09b, #96c93d); width:50px; height:50px; font-size:24px; box-shadow:0 4px 10px rgba(0,0,0,0.1);" onclick="document.getElementById('aiImageInput').click()">📸</button>
-                <input type="file" id="aiImageInput" accept="image/*" style="display:none;" onchange="handleAiImageSelect(event)">
-                <input type="text" id="aiTextInput" placeholder="اكتب سؤالك هنا..." style="flex:1; border-radius:12px; padding:12px; border:2px solid var(--border-color); background:var(--card-bg); color:var(--text-dark);">
-                <button class="btn-primary" style="width:55px; height:55px; padding:0; display:flex; justify-content:center; align-items:center; font-size:24px; box-shadow:0 4px 10px rgba(0,0,0,0.1);" onclick="sendAiMessage()">📤</button>
+            
+            <div class="admin-section" style="border: 2px solid var(--accent); background: linear-gradient(135deg, var(--card-bg), #fffaf0);">
+                <h4 style="border-bottom:none; margin-bottom:0; color:var(--primary); text-align:center;">🥇 الطالب المثالي (الأعلى نقاطاً)</h4>
+                <div id="statTopStudent" style="font-size:24px; font-weight:900; text-align:center; padding:15px; color:var(--text-dark);">
+                    جاري التحميل...
+                </div>
             </div>
         </div>
     </div>
-    
-    <div id="examsListPage" class="page"><div class="page-content"><h2 style="color:var(--primary); text-align:center; margin-bottom:20px; font-weight:900;">⏱️ الامتحانات المتاحة</h2><div id="examsContainer"><div class="empty-state">لا توجد امتحانات حالياً</div></div></div></div>
 
-    <div id="boardPage" class="page"><div class="page-content"><button class="upload-btn" onclick="document.getElementById('boardFileInput').click()">📸 رفع صورة للسبورة</button><input type="file" id="boardFileInput" accept="image/*" style="display:none;" onchange="handleImageSelect(event)"><div class="board-preview-card post-card" id="boardPreviewCard" style="display:none; padding:20px; border:2px dashed var(--accent);"><h3 style="text-align:center; margin-bottom:15px;">معاينة ونشر</h3><img id="previewImage" src="" style="width:100%; border-radius:12px; margin-bottom:15px; max-height:300px; object-fit:contain;"><input type="text" id="boardCustomDate" placeholder="العنوان (مثال: الثلاثاء)" style="margin-bottom:15px;"><div class="action-btns"><button class="btn-accept" onclick="confirmBoardUpload()">نشر</button><button class="btn-reject" onclick="cancelBoardUpload()">إلغاء</button></div></div><div id="boardFeedContainer"><div class="empty-state">لا توجد صور</div></div></div></div>
-
-    <div id="accountsPage" class="page"><div class="page-content"><h2 style="color:var(--primary); margin-bottom:20px;">إدارة الحسابات</h2><div id="accountsContainer"></div></div></div>
+    <div id="accountsPage" class="page">
+        <div class="page-content">
+            <h2 style="color:var(--primary); margin-bottom:20px;">إدارة الحسابات</h2>
+            <div id="accountsContainer"></div>
+        </div>
+    </div>
 
     <div id="adminPage" class="page">
         <div class="page-content">
-            <div class="admin-section" style="border: 2px solid var(--blue-strip);"><h4>⏱️ إنشاء امتحان إلكتروني</h4><input type="text" id="examTitle" placeholder="عنوان الامتحان" style="margin-bottom:10px;"><input type="number" id="examTime" placeholder="وقت الامتحان بالدقائق" style="margin-bottom:15px;"><div id="questionsBuilderContainer"></div><button class="btn-accept" style="width:100%; margin-bottom:15px; background: #475569;" onclick="addQuestionField()">➕ إضافة سؤال للامتحان</button><button class="btn-primary" onclick="saveExam()">نشر الامتحان للطلبة فوراً 🚀</button></div>
+            <div class="admin-section" style="border: 2px solid var(--blue-strip);">
+                <h4>⏱️ إنشاء امتحان إلكتروني</h4>
+                <input type="text" id="examTitle" placeholder="عنوان الامتحان" style="margin-bottom:10px;">
+                <input type="number" id="examTime" placeholder="وقت الامتحان بالدقائق" style="margin-bottom:15px;">
+                <div id="questionsBuilderContainer"></div>
+                <button class="btn-accept" style="width:100%; margin-bottom:15px; background: #475569;" onclick="addQuestionField()">➕ إضافة سؤال للامتحان</button>
+                <button class="btn-primary" onclick="saveExam()">نشر الامتحان للطلبة فوراً 🚀</button>
+            </div>
             <div class="admin-section"><h4>🔴 نشر خبر عاجل</h4><textarea id="newsText" placeholder="الخبر..."></textarea><button class="btn-primary" style="margin-top:10px;" onclick="publishNews()">نشر</button></div>
             <div class="admin-section"><h4>❓ نشر سؤال اليوم</h4><textarea id="quizQ" placeholder="السؤال..."></textarea><input type="text" id="quizA" placeholder="الإجابة الصحيحة" style="margin-top:10px;"><button class="btn-primary" style="margin-top:10px;" onclick="publishQuiz()">نشر</button></div>
             <div class="admin-section"><h4>📝 نشر واجب</h4><input type="text" id="customPostDate" placeholder="التاريخ"><textarea id="postTasmee3" placeholder="تسميع..." style="margin-top:10px;"></textarea><textarea id="postHal" placeholder="حل..." style="margin-top:10px;"></textarea><button class="btn-primary" style="margin-top:10px;" onclick="publishPost()">نشر</button></div>
@@ -230,6 +278,14 @@
 
 </div>
 
+<div id="viewsModal" class="modal">
+    <div class="modal-box" style="max-height:80vh; display:flex; flex-direction:column;">
+        <span class="close-modal" onclick="closeModal('viewsModal')">&times;</span>
+        <h3 style="color:var(--primary); margin-bottom:15px; font-weight:900; display:flex; align-items:center; gap:10px;">👁️ سجل المشاهدات</h3>
+        <div id="viewsList" style="overflow-y:auto; flex:1; padding-right:5px;"></div>
+    </div>
+</div>
+
 <div id="liveExamModal" class="modal" style="background:var(--bg-color); z-index:10000; display:none; padding:0;">
     <div style="width:100%; height:100%; display:flex; flex-direction:column; background:var(--bg-color);">
         <div style="background:var(--header-bg1); color:white; padding:15px 20px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 10px rgba(0,0,0,0.2);">
@@ -237,14 +293,17 @@
             <div style="background:var(--red-strip); padding:5px 15px; border-radius:10px; font-weight:900; font-size:20px; letter-spacing:2px; box-shadow:0 2px 5px rgba(0,0,0,0.2);" id="examTimer">00:00</div>
         </div>
         <div id="liveExamQuestions" style="flex:1; overflow-y:auto; padding:20px; padding-bottom:100px;"></div>
-        <div style="padding:15px; background:var(--card-bg); border-top:1px solid var(--border-color); position:absolute; bottom:0; width:100%; box-shadow:0 -5px 10px rgba(0,0,0,0.1);"><button class="btn-primary" style="background:#10b981; font-size:20px;" onclick="submitExam()">إنهاء وتسليم الامتحان ✅</button></div>
+        <div style="padding:15px; background:var(--card-bg); border-top:1px solid var(--border-color); position:absolute; bottom:0; width:100%; box-shadow:0 -5px 10px rgba(0,0,0,0.1);">
+            <button class="btn-primary" style="background:#10b981; font-size:20px;" onclick="submitExam()">إنهاء وتسليم الامتحان ✅</button>
+        </div>
     </div>
 </div>
 
 <div id="resultModal" class="modal" style="background:var(--bg-color); z-index:10000; display:none; padding:0;">
     <div style="width:100%; height:100%; display:flex; flex-direction:column; background:var(--bg-color);">
         <div style="background:var(--header-bg1); color:white; padding:15px 20px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 10px rgba(0,0,0,0.2);">
-            <h3 style="margin:0; font-family:'Cairo'; font-size:18px;">تقرير النتيجة 📋</h3><span style="font-size:30px; cursor:pointer;" onclick="closeModal('resultModal'); loadExams();">&times;</span>
+            <h3 style="margin:0; font-family:'Cairo'; font-size:18px;">تقرير النتيجة 📋</h3>
+            <span style="font-size:30px; cursor:pointer;" onclick="closeModal('resultModal'); loadExams();">&times;</span>
         </div>
         <div id="resultContent" style="flex:1; overflow-y:auto; padding:20px; padding-bottom:40px;"></div>
     </div>
@@ -268,73 +327,7 @@
     let examTimerInterval = null; 
     let examQuestionCount = 0;
 
-    // --- المساعد الذكي (Gemini 1.5 Pro للعمل المضمون) ---
-    const GEMINI_API_KEY = "AIzaSyAq-Ig1Moe8fEAg8OQBmfzPjHv8tWjpbQY"; 
-    let currentAiImageBase64 = "";
-
-    function handleAiImageSelect(e) {
-        const f = e.target.files[0]; if(!f) return;
-        const r = new FileReader(); r.readAsDataURL(f);
-        r.onload = ev => {
-            const img = new Image(); img.src = ev.target.result;
-            img.onload = () => {
-                const cv = document.createElement('canvas'); const ctx = cv.getContext('2d');
-                cv.width = img.width > 800 ? 800 : img.width; cv.height = img.height * (cv.width / img.width);
-                ctx.drawImage(img, 0, 0, cv.width, cv.height);
-                currentAiImageBase64 = cv.toDataURL('image/jpeg', 0.8);
-                document.getElementById('aiImagePreview').src = currentAiImageBase64;
-                document.getElementById('aiImagePreviewContainer').style.display = 'block';
-                document.getElementById('aiImageInput').value = '';
-            }
-        }
-    }
-
-    function clearAiImage() {
-        currentAiImageBase64 = "";
-        document.getElementById('aiImagePreviewContainer').style.display = 'none';
-        document.getElementById('aiImagePreview').src = "";
-    }
-
-    function appendChatMsg(sender, text, imgBase64 = "") {
-        const chatBox = document.getElementById('aiChatHistory');
-        const formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
-        let imgHtml = imgBase64 ? `<img src="${imgBase64}" style="max-width:100%; border-radius:10px; margin-bottom:10px; border:1px solid var(--border-color);"><br>` : '';
-        const msgClass = sender === 'user' ? 'user-msg' : 'bot-msg';
-        chatBox.insertAdjacentHTML('beforeend', `<div class="chat-msg ${msgClass}">${imgHtml} ${formattedText}</div>`);
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    async function sendAiMessage() {
-        const input = document.getElementById('aiTextInput');
-        const text = input.value.trim();
-        const imgToSend = currentAiImageBase64;
-        if (!text && !imgToSend) return;
-
-        appendChatMsg('user', text, imgToSend);
-        input.value = ''; clearAiImage();
-        document.getElementById('aiTypingIndicator').style.display = 'block';
-        document.getElementById('aiChatHistory').scrollTop = document.getElementById('aiChatHistory').scrollHeight;
-
-        let parts = [{text: text || "اشرح لي ما في هذه الصورة بالتفصيل."}];
-        if (imgToSend) { parts.push({ inline_data: { mime_type: "image/jpeg", data: imgToSend.split(',')[1] } }); }
-
-        try {
-            // استخدام gemini-1.5-pro كما تم الاتفاق عليه لتجنب الخطأ
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: parts }] })
-            });
-            const data = await response.json();
-            document.getElementById('aiTypingIndicator').style.display = 'none';
-            if (data.error) { appendChatMsg('bot', `⚠️ عذراً، فيه مشكلة من السيرفر: ${data.error.message}`); } 
-            else if (data.candidates && data.candidates.length > 0) { appendChatMsg('bot', data.candidates[0].content.parts[0].text); } 
-            else { appendChatMsg('bot', '⚠️ عذراً، لم أتمكن من صياغة إجابة واضحة.'); }
-        } catch(e) {
-            document.getElementById('aiTypingIndicator').style.display = 'none';
-            appendChatMsg('bot', '⚠️ حدثت مشكلة في الاتصال بالإنترنت.');
-        }
-    }
-
-    // --- الوضع الليلي وبداية التشغيل (الذاكرة) ---
+    // --- الوضع الليلي وبداية التشغيل ---
     function toggleDarkMode() {
         document.body.classList.toggle('dark-mode');
         const isDark = document.body.classList.contains('dark-mode');
@@ -359,10 +352,12 @@
             if (currentUserIsAdmin) { 
                 document.getElementById('adminLink').style.display = 'flex'; 
                 document.getElementById('adminAccountsLink').style.display = 'flex'; 
+                document.getElementById('adminAnalyticsLink').style.display = 'flex'; 
                 loadAdminData(); 
             } else {
                 document.getElementById('adminLink').style.display = 'none'; 
                 document.getElementById('adminAccountsLink').style.display = 'none'; 
+                document.getElementById('adminAnalyticsLink').style.display = 'none'; 
             }
             switchPage('mainPage'); 
             loadPublicData();
@@ -376,8 +371,15 @@
         document.getElementById('dropdownMenu').classList.remove('show'); 
         document.getElementById('globalHeader').style.display = (pageId === 'loginPage' || pageId === 'signupPage') ? 'none' : 'flex'; 
     }
+    
     function toggleMenu() { document.getElementById('dropdownMenu').classList.toggle('show'); }
-    window.onclick = function(e) { if (!e.target.matches('.menu-btn') && !e.target.matches('#darkModeBtn')) { document.querySelectorAll(".dropdown-menu").forEach(d => d.classList.remove('show')); } }
+    
+    window.onclick = function(e) { 
+        if (!e.target.matches('.menu-btn') && !e.target.matches('#darkModeBtn')) { 
+            document.querySelectorAll(".dropdown-menu").forEach(d => d.classList.remove('show')); 
+        } 
+    }
+    
     function closeModal(id) { document.getElementById(id).style.display = "none"; }
 
     // --- تسجيل الدخول والإنشاء ---
@@ -396,13 +398,15 @@
         const user = document.getElementById('loginUsername').value; 
         const pass = document.getElementById('loginPassword').value;
         
-        if (user === 'Admin' && pass === '2013716') {
+        // دعم حسابين للأدمن
+        if ((user === 'Admin' && pass === '2013716') || (user === 'Admrtaha' && pass === 'Mrtaha')) {
             currentUserIsAdmin = true; 
-            currentUserName = "الأدمن";
+            currentUserName = user;
             localStorage.setItem('loggedInUser', currentUserName); 
             localStorage.setItem('isAdmin', 'true');
             document.getElementById('adminLink').style.display='flex'; 
             document.getElementById('adminAccountsLink').style.display='flex';
+            document.getElementById('adminAnalyticsLink').style.display='flex';
             document.getElementById('displayUserName').innerText=currentUserName;
             switchPage('mainPage'); 
             loadPublicData(); 
@@ -414,7 +418,12 @@
             const snap = await db.collection('users').where('username','==',user).where('password','==',pass).get();
             if (snap.empty) return alert('خطأ في البيانات.');
             const uData = snap.docs[0].data(); const uId = snap.docs[0].id;
-            if (uData.status === 'banned') { if (uData.banUntil && uData.banUntil > Date.now()) return alert(`محظور حتى ${new Date(uData.banUntil).toLocaleDateString()}`); else if (!uData.banUntil) return alert('محظور نهائياً.'); else await db.collection('users').doc(uId).update({status:'accepted', banUntil:null}); }
+            
+            if (uData.status === 'banned') { 
+                if (uData.banUntil && uData.banUntil > Date.now()) return alert(`محظور حتى ${new Date(uData.banUntil).toLocaleDateString()}`); 
+                else if (!uData.banUntil) return alert('محظور نهائياً.'); 
+                else await db.collection('users').doc(uId).update({status:'accepted', banUntil:null}); 
+            }
             else if (uData.status !== 'accepted') return alert(uData.status==='pending'?'قيد المراجعة':'مرفوض');
             
             currentUserIsAdmin = false; 
@@ -423,6 +432,7 @@
             localStorage.setItem('isAdmin', 'false');
             document.getElementById('adminLink').style.display='none'; 
             document.getElementById('adminAccountsLink').style.display='none';
+            document.getElementById('adminAnalyticsLink').style.display='none';
             document.getElementById('displayUserName').innerText = currentUserName;
             switchPage('mainPage'); 
             loadPublicData();
@@ -430,15 +440,95 @@
     }
 
     async function handleRegister(e) {
-        e.preventDefault(); const name = document.getElementById('signupName').value; const pass = document.getElementById('signupPassword').value; const conf = document.getElementById('signupConfirm').value;
+        e.preventDefault(); 
+        const name = document.getElementById('signupName').value; 
+        const pass = document.getElementById('signupPassword').value; 
+        const conf = document.getElementById('signupConfirm').value;
         if (pass !== conf) return alert('كلمتا المرور غير متطابقتين!');
-        const check = await db.collection('users').where('username', '==', name).get(); if(!check.empty) return alert('مستخدم بالفعل.');
+        
+        const check = await db.collection('users').where('username', '==', name).get(); 
+        if(!check.empty) return alert('مستخدم بالفعل.');
+        
         await db.collection('users').add({ username: name, password: pass, status: 'pending', score: 0, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-        alert('تم إرسال الطلب.'); switchPage('loginPage');
+        alert('تم إرسال الطلب للمراجعة.'); switchPage('loginPage');
     }
 
     function loadPublicData() { loadPosts(); loadBoardPosts(); loadNews(); loadQuizzes(); loadExams(); }
-    function loadAdminData() { loadRequests(); loadBoardRequests(); loadAllAccounts(); }
+    function loadAdminData() { loadRequests(); loadBoardRequests(); loadAllAccounts(); loadAnalytics(); }
+
+    // --- إحصائيات المستر الذكية 📊 ---
+    function loadAnalytics() {
+        if (!currentUserIsAdmin) return;
+        
+        db.collection('users').onSnapshot(snap => {
+            let studentCount = 0;
+            let totalScore = 0;
+            let topStudent = "لا يوجد";
+            let highestScore = -1;
+            let pendingCount = 0;
+
+            snap.forEach(doc => {
+                const u = doc.data();
+                if(u.username !== 'Admin' && u.username !== 'Admrtaha') {
+                    studentCount++;
+                    let score = u.score || 0;
+                    totalScore += score;
+                    if(score > highestScore) {
+                        highestScore = score;
+                        topStudent = u.username;
+                    }
+                    if(u.status === 'pending') pendingCount++;
+                }
+            });
+
+            document.getElementById('statStudents').innerText = studentCount;
+            document.getElementById('statAvgScore').innerText = studentCount > 0 ? (totalScore / studentCount).toFixed(1) : 0;
+            document.getElementById('statTopStudent').innerHTML = highestScore > 0 ? `👑 ${topStudent} <br><span style="font-size:16px; color:#ff9900;">(${highestScore} نقطة)</span>` : 'لا يوجد نقاط بعد';
+            document.getElementById('statPending').innerText = pendingCount;
+        });
+
+        db.collection('exams').onSnapshot(snap => {
+            document.getElementById('statExams').innerText = snap.size;
+        });
+    }
+
+    // --- نظام المشاهدات 👁️ ---
+    function markAsSeen(col, id, seenMap) {
+        if (currentUserIsAdmin || !currentUserName) return;
+        if (!seenMap || !seenMap[currentUserName]) {
+            db.collection(col).doc(id).set({
+                seenBy: { [currentUserName]: Date.now() }
+            }, { merge: true });
+        }
+    }
+
+    async function openViews(col, id) {
+        document.getElementById('viewsModal').style.display = 'flex';
+        const list = document.getElementById('viewsList');
+        list.innerHTML = '<div style="text-align:center; padding:20px; font-weight:bold;">جاري التحميل... ⏳</div>';
+        try {
+            const doc = await db.collection(col).doc(id).get();
+            const d = doc.data();
+            list.innerHTML = '';
+            let hasViews = false;
+            if (d.seenBy) {
+                const views = Object.entries(d.seenBy).sort((a,b) => b[1] - a[1]);
+                for (const [user, time] of views) {
+                    hasViews = true;
+                    const dateStr = new Date(time).toLocaleString('ar-EG', { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+                    list.insertAdjacentHTML('beforeend', `
+                        <div style="display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid var(--border-color); align-items:center;">
+                            <strong style="color:var(--text-dark); font-size:16px;">👤 ${user}</strong>
+                            <span style="background:var(--input-bg); padding:5px 10px; border-radius:8px; font-size:13px; color:var(--text-dark); font-weight:bold;">${dateStr}</span>
+                        </div>
+                    `);
+                }
+            }
+            if(!hasViews) list.innerHTML = '<div class="empty-state">لم يشاهدها أحد حتى الآن 👁️</div>';
+        } catch(e) {
+            list.innerHTML = '<div class="empty-state" style="color:#ff4757;">حدث خطأ في التحميل ❌</div>';
+        }
+    }
 
     // --- الامتحانات الإلكترونية ---
     function addQuestionField() {
@@ -450,50 +540,109 @@
                     <button class="delete-btn" style="padding:2px 8px; width:auto;" onclick="document.getElementById('examQBox-${examQuestionCount}').remove()">حذف</button>
                 </div>
                 <select class="q-type" style="margin-bottom:10px;" onchange="toggleExamQType(${examQuestionCount}, this.value)">
-                    <option value="mcq">اختياري (MCQ)</option><option value="rewrite">سؤال أعد الكتابة (Rewrite)</option><option value="text">أكمل الفراغ (إجابة قصيرة)</option><option value="para">برجراف / مقال (بدون تصحيح تلقائي)</option>
+                    <option value="mcq">اختياري (MCQ)</option>
+                    <option value="rewrite">سؤال أعد الكتابة (Rewrite)</option>
+                    <option value="text">أكمل الفراغ (إجابة قصيرة)</option>
+                    <option value="para">برجراف / مقال (بدون تصحيح تلقائي)</option>
                 </select>
                 <textarea class="q-text" placeholder="رأس السؤال / الجملة..." style="margin-bottom:10px; min-height:60px;"></textarea>
-                <div id="mcqOpts-${examQuestionCount}"><input type="text" class="opt-1" placeholder="الاختيار الأول" style="margin-bottom:5px;"><input type="text" class="opt-2" placeholder="الاختيار الثاني" style="margin-bottom:5px;"><input type="text" class="opt-3" placeholder="الاختيار الثالث" style="margin-bottom:5px;"><input type="text" class="opt-4" placeholder="الاختيار الرابع" style="margin-bottom:10px;"><select class="mcq-correct"><option value="1">الإجابة الصحيحة: الأول</option><option value="2">الإجابة الصحيحة: الثاني</option><option value="3">الإجابة الصحيحة: الثالث</option><option value="4">الإجابة الصحيحة: الرابع</option></select></div>
-                <div id="rewriteOpts-${examQuestionCount}" style="display:none;"><input type="text" class="rewrite-bracket" placeholder="الكلمة بين الأقواس" style="margin-bottom:10px; border: 2px solid var(--red-strip);"><input type="text" class="rewrite-correct" placeholder="الجملة الصحيحة (للتصحيح)"></div>
-                <div id="textOpts-${examQuestionCount}" style="display:none;"><input type="text" class="text-correct" placeholder="الكلمة الصحيحة (للتصحيح)"></div>
+                
+                <div id="mcqOpts-${examQuestionCount}">
+                    <input type="text" class="opt-1" placeholder="الاختيار الأول" style="margin-bottom:5px;">
+                    <input type="text" class="opt-2" placeholder="الاختيار الثاني" style="margin-bottom:5px;">
+                    <input type="text" class="opt-3" placeholder="الاختيار الثالث" style="margin-bottom:5px;">
+                    <input type="text" class="opt-4" placeholder="الاختيار الرابع" style="margin-bottom:10px;">
+                    <select class="mcq-correct">
+                        <option value="1">الإجابة الصحيحة: الأول</option>
+                        <option value="2">الإجابة الصحيحة: الثاني</option>
+                        <option value="3">الإجابة الصحيحة: الثالث</option>
+                        <option value="4">الإجابة الصحيحة: الرابع</option>
+                    </select>
+                </div>
+                <div id="rewriteOpts-${examQuestionCount}" style="display:none;">
+                    <input type="text" class="rewrite-bracket" placeholder="الكلمة بين الأقواس" style="margin-bottom:10px; border: 2px solid var(--red-strip);">
+                    <input type="text" class="rewrite-correct" placeholder="الجملة الصحيحة (للتصحيح)">
+                </div>
+                <div id="textOpts-${examQuestionCount}" style="display:none;">
+                    <input type="text" class="text-correct" placeholder="الكلمة الصحيحة (للتصحيح)">
+                </div>
             </div>`;
         document.getElementById('questionsBuilderContainer').insertAdjacentHTML('beforeend', html);
     }
 
-    function toggleExamQType(id, type) { document.getElementById(`mcqOpts-${id}`).style.display=(type==='mcq')?'block':'none'; document.getElementById(`rewriteOpts-${id}`).style.display=(type==='rewrite')?'block':'none'; document.getElementById(`textOpts-${id}`).style.display=(type==='text')?'block':'none'; }
+    function toggleExamQType(id, type) { 
+        document.getElementById(`mcqOpts-${id}`).style.display=(type==='mcq')?'block':'none'; 
+        document.getElementById(`rewriteOpts-${id}`).style.display=(type==='rewrite')?'block':'none'; 
+        document.getElementById(`textOpts-${id}`).style.display=(type==='text')?'block':'none'; 
+    }
 
     async function saveExam() {
-        const title = document.getElementById('examTitle').value; const timeLimit = parseInt(document.getElementById('examTime').value);
+        const title = document.getElementById('examTitle').value; 
+        const timeLimit = parseInt(document.getElementById('examTime').value);
         if(!title || !timeLimit) return alert('أدخل العنوان والوقت');
-        const qBlocks = document.querySelectorAll('.exam-q-block'); if(qBlocks.length === 0) return alert('أضف سؤالاً');
+        const qBlocks = document.querySelectorAll('.exam-q-block'); 
+        if(qBlocks.length === 0) return alert('أضف سؤالاً');
 
         let questions = []; let isValid = true;
         qBlocks.forEach(block => {
-            const type = block.querySelector('.q-type').value; const text = block.querySelector('.q-text').value.trim(); if(!text) isValid = false;
+            const type = block.querySelector('.q-type').value; 
+            const text = block.querySelector('.q-text').value.trim(); 
+            if(!text) isValid = false;
+            
             let q = { type, text };
-            if(type === 'mcq') { q.options = [block.querySelector('.opt-1').value.trim(), block.querySelector('.opt-2').value.trim(), block.querySelector('.opt-3').value.trim(), block.querySelector('.opt-4').value.trim()]; q.correctOption = parseInt(block.querySelector('.mcq-correct').value) - 1; if(q.options.some(o => !o)) isValid = false; } 
-            else if(type === 'rewrite') { q.bracketWord = block.querySelector('.rewrite-bracket').value.trim(); q.correctText = block.querySelector('.rewrite-correct').value.trim(); if(!q.bracketWord || !q.correctText) isValid = false; }
-            else if(type === 'text') { q.correctText = block.querySelector('.text-correct').value.trim(); if(!q.correctText) isValid = false; }
+            if(type === 'mcq') { 
+                q.options = [block.querySelector('.opt-1').value.trim(), block.querySelector('.opt-2').value.trim(), block.querySelector('.opt-3').value.trim(), block.querySelector('.opt-4').value.trim()]; 
+                q.correctOption = parseInt(block.querySelector('.mcq-correct').value) - 1; 
+                if(q.options.some(o => !o)) isValid = false; 
+            } 
+            else if(type === 'rewrite') { 
+                q.bracketWord = block.querySelector('.rewrite-bracket').value.trim(); 
+                q.correctText = block.querySelector('.rewrite-correct').value.trim(); 
+                if(!q.bracketWord || !q.correctText) isValid = false; 
+            }
+            else if(type === 'text') { 
+                q.correctText = block.querySelector('.text-correct').value.trim(); 
+                if(!q.correctText) isValid = false; 
+            }
             questions.push(q);
         });
 
         if(!isValid) return alert('يرجى ملء جميع الحقول للأسئلة.');
-        try { await db.collection('exams').add({ title, timeLimit, questions, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-            document.getElementById('examTitle').value=''; document.getElementById('examTime').value=''; document.getElementById('questionsBuilderContainer').innerHTML=''; examQuestionCount=0; alert('تم النشر بنجاح! 🚀'); 
+        
+        try { 
+            await db.collection('exams').add({ title, timeLimit, questions, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+            document.getElementById('examTitle').value=''; 
+            document.getElementById('examTime').value=''; 
+            document.getElementById('questionsBuilderContainer').innerHTML=''; 
+            examQuestionCount=0; 
+            alert('تم نشر الامتحان بنجاح!'); 
         } catch (error) { alert('حدث خطأ.'); }
     }
 
     function loadExams() {
         db.collection('exams').onSnapshot(async snap => {
             const cont = document.getElementById('examsContainer'); 
-            if(snap.empty) { cont.innerHTML = '<div class="empty-state">لا توجد امتحانات</div>'; return; }
+            if(snap.empty) { cont.innerHTML = '<div class="empty-state">لا توجد امتحانات متاحة الآن</div>'; return; }
+            
             const resSnap = await db.collection('exam_results').where('username', '==', currentUserName).get();
             let submittedIds = resSnap.docs.map(d => d.data().examId);
-            let examsArray = []; snap.forEach(doc => { examsArray.push({id: doc.id, ...doc.data()}); });
-            examsArray.sort((a,b) => { let timeA = a.createdAt ? a.createdAt.toMillis() : Date.now(); let timeB = b.createdAt ? b.createdAt.toMillis() : Date.now(); return timeB - timeA; });
+            
+            let examsArray = []; 
+            snap.forEach(doc => { 
+                const d = doc.data();
+                examsArray.push({id: doc.id, ...d}); 
+                markAsSeen('exams', doc.id, d.seenBy);
+            });
+            examsArray.sort((a,b) => { 
+                let timeA = a.createdAt ? a.createdAt.toMillis() : Date.now(); 
+                let timeB = b.createdAt ? b.createdAt.toMillis() : Date.now(); 
+                return timeB - timeA; 
+            });
+            
             let html = '';
             examsArray.forEach(ex => {
-                const exId = ex.id; const adminBtn = currentUserIsAdmin ? `<div class="admin-controls-strip"><button class="delete-btn" style="width:auto;" onclick="deleteDocument('exams', '${exId}')">مسح 🗑️</button></div>` : '';
+                const exId = ex.id; 
+                const adminBtn = currentUserIsAdmin ? `<div class="admin-controls-strip" style="justify-content:space-between;"><button class="btn-accept" style="width:auto; padding:5px 15px; border-radius:8px;" onclick="openViews('exams','${exId}')">👁️ المشاهدات</button><button class="delete-btn" style="border-radius:8px;" onclick="deleteDocument('exams', '${exId}')">مسح 🗑️</button></div>` : '';
                 let actionBtn = submittedIds.includes(exId) ? `<button class="btn-view" style="width:100%; opacity:0.8;" disabled>✅ تم التسليم</button>` : `<button class="btn-primary" style="width:100%;" onclick="startExam('${exId}')">بدء الامتحان 🚀</button>`;
                 html += `<div class="post-card">${adminBtn}<div class="post-content" style="text-align:center;"><h3 style="color:var(--primary); margin-bottom:15px; font-size:22px;">📋 ${ex.title}</h3><div style="font-weight:bold; color:var(--text-dark); margin-bottom:20px; background:var(--input-bg); padding:15px; border-radius:12px;"><div>⏱️ مدة الامتحان: <span style="color:var(--secondary);">${ex.timeLimit} دقيقة</span></div><div style="margin-top:10px;">❓ الأسئلة: <span style="color:var(--blue-strip);">${ex.questions.length} سؤال</span></div></div>${actionBtn}</div></div>`;
             });
@@ -502,62 +651,238 @@
     }
 
     async function startExam(exId) {
-        const doc = await db.collection('exams').doc(exId).get(); currentExam = { id: doc.id, ...doc.data() };
+        const doc = await db.collection('exams').doc(exId).get(); 
+        currentExam = { id: doc.id, ...doc.data() };
         document.getElementById('liveExamTitle').innerText = currentExam.title;
-        const qCont = document.getElementById('liveExamQuestions'); qCont.innerHTML = '';
+        const qCont = document.getElementById('liveExamQuestions'); 
+        qCont.innerHTML = '';
+        
         currentExam.questions.forEach((q, i) => {
-            let inputHtml = ''; let qTitle = `<h4 style="color:var(--primary); margin-bottom:15px; line-height:1.6; font-size:18px;">${i+1}- ${q.text}</h4>`;
-            if(q.type === 'mcq') { q.options.forEach((opt, idx) => { inputHtml += `<label style="display:flex; align-items:center; padding:15px; background:var(--input-bg); border:1px solid var(--border-color); border-radius:10px; margin-bottom:10px; cursor:pointer; font-weight:bold; font-size:16px;"><input type="radio" name="ex-q-${i}" value="${idx}" style="margin-left:15px; transform:scale(1.5);"> ${opt}</label>`; }); } 
-            else if (q.type === 'rewrite') { qTitle = `<div style="margin-bottom:15px;"><h4 style="color:var(--primary); line-height:1.6; margin-bottom:10px; font-size:18px;">${i+1}- ${q.text}</h4> <span class="bracket-word">(${q.bracketWord})</span></div>`; inputHtml = `<input type="text" id="ex-q-${i}" placeholder="اكتب الجملة..." style="width:100%; padding:15px; background:var(--input-bg); border:1px solid var(--border-color); border-radius:10px;">`; } 
-            else { inputHtml = `<textarea id="ex-q-${i}" placeholder="اكتب إجابتك..." style="width:100%; min-height:80px; padding:15px; background:var(--input-bg); border:1px solid var(--border-color); border-radius:10px;"></textarea>`; }
+            let inputHtml = ''; 
+            let qTitle = `<h4 style="color:var(--primary); margin-bottom:15px; line-height:1.6; font-size:18px;">${i+1}- ${q.text}</h4>`;
+            
+            if(q.type === 'mcq') { 
+                q.options.forEach((opt, idx) => { 
+                    inputHtml += `<label style="display:flex; align-items:center; padding:15px; background:var(--input-bg); border:1px solid var(--border-color); border-radius:10px; margin-bottom:10px; cursor:pointer; font-weight:bold; font-size:16px;"><input type="radio" name="ex-q-${i}" value="${idx}" style="margin-left:15px; transform:scale(1.5);"> ${opt}</label>`; 
+                }); 
+            } 
+            else if (q.type === 'rewrite') { 
+                qTitle = `<div style="margin-bottom:15px;"><h4 style="color:var(--primary); line-height:1.6; margin-bottom:10px; font-size:18px;">${i+1}- ${q.text}</h4> <span class="bracket-word">(${q.bracketWord})</span></div>`; 
+                inputHtml = `<input type="text" id="ex-q-${i}" placeholder="اكتب الجملة الجديدة..." style="width:100%; padding:15px; background:var(--input-bg); border:1px solid var(--border-color); border-radius:10px;">`; 
+            } 
+            else { 
+                inputHtml = `<textarea id="ex-q-${i}" placeholder="اكتب إجابتك..." style="width:100%; min-height:80px; padding:15px; background:var(--input-bg); border:1px solid var(--border-color); border-radius:10px;"></textarea>`; 
+            }
+            
             qCont.insertAdjacentHTML('beforeend', `<div class="post-card" style="padding:20px; border:2px solid var(--border-color); margin-bottom:20px;">${qTitle}${inputHtml}</div>`);
         });
-        document.getElementById('liveExamModal').style.display = 'block'; startTimer(currentExam.timeLimit * 60);
+        
+        document.getElementById('liveExamModal').style.display = 'block'; 
+        startTimer(currentExam.timeLimit * 60);
     }
 
-    function startTimer(seconds) { clearInterval(examTimerInterval); const el = document.getElementById('examTimer'); examTimerInterval = setInterval(() => { seconds--; el.innerText = `${Math.floor(seconds/60).toString().padStart(2,'0')}:${(seconds%60).toString().padStart(2,'0')}`; if(seconds <= 0) { clearInterval(examTimerInterval); alert('انتهى الوقت! سيتم التسليم.'); submitExam(); } }, 1000); }
+    function startTimer(seconds) { 
+        clearInterval(examTimerInterval); 
+        const el = document.getElementById('examTimer'); 
+        examTimerInterval = setInterval(() => { 
+            seconds--; 
+            el.innerText = `${Math.floor(seconds/60).toString().padStart(2,'0')}:${(seconds%60).toString().padStart(2,'0')}`; 
+            if(seconds <= 0) { 
+                clearInterval(examTimerInterval); 
+                alert('انتهى الوقت! سيتم تسليم إجاباتك تلقائياً.'); 
+                submitExam(); 
+            } 
+        }, 1000); 
+    }
 
     async function submitExam() {
-        clearInterval(examTimerInterval); let score = 0; let totalAutoGraded = 0; let resultHtml = '';
+        clearInterval(examTimerInterval); 
+        let score = 0; 
+        let totalAutoGraded = 0; 
+        let resultHtml = '';
+        
         currentExam.questions.forEach((q, i) => {
-            let studentAnsText = "لم تتم الإجابة"; let isCorrect = false; let correctAnsText = "";
-            if(q.type === 'mcq') { totalAutoGraded++; const sel = document.querySelector(`input[name="ex-q-${i}"]:checked`); correctAnsText = q.options[q.correctOption]; if(sel) { studentAnsText = q.options[parseInt(sel.value)]; if(parseInt(sel.value) === q.correctOption) isCorrect = true; } } 
-            else if(q.type === 'rewrite' || q.type === 'text') { totalAutoGraded++; const ansInput = document.getElementById(`ex-q-${i}`).value.trim(); if(ansInput) studentAnsText = ansInput; correctAnsText = q.correctText; const ansNorm = ansInput.toLowerCase().replace(/\s+/g, ' '); const corrNorm = correctAnsText.toLowerCase().replace(/\s+/g, ' '); if(ansNorm === corrNorm) isCorrect = true; } 
-            else { const ansInput = document.getElementById(`ex-q-${i}`).value.trim(); if(ansInput) studentAnsText = ansInput; correctAnsText = "مراجعة المستر"; isCorrect = null; }
+            let studentAnsText = "لم تتم الإجابة"; 
+            let isCorrect = false; 
+            let correctAnsText = "";
+            
+            if(q.type === 'mcq') { 
+                totalAutoGraded++; 
+                const sel = document.querySelector(`input[name="ex-q-${i}"]:checked`); 
+                correctAnsText = q.options[q.correctOption]; 
+                if(sel) { 
+                    studentAnsText = q.options[parseInt(sel.value)]; 
+                    if(parseInt(sel.value) === q.correctOption) isCorrect = true; 
+                } 
+            } 
+            else if(q.type === 'rewrite' || q.type === 'text') { 
+                totalAutoGraded++; 
+                const ansInput = document.getElementById(`ex-q-${i}`).value.trim(); 
+                if(ansInput) studentAnsText = ansInput; 
+                correctAnsText = q.correctText; 
+                const ansNorm = ansInput.toLowerCase().replace(/\s+/g, ' '); 
+                const corrNorm = correctAnsText.toLowerCase().replace(/\s+/g, ' '); 
+                if(ansNorm === corrNorm) isCorrect = true; 
+            } 
+            else { 
+                const ansInput = document.getElementById(`ex-q-${i}`).value.trim(); 
+                if(ansInput) studentAnsText = ansInput; 
+                correctAnsText = "مراجعة المستر"; 
+                isCorrect = null; 
+            }
+            
             let qTitleDisplay = `${i+1}- ${q.text} ${q.bracketWord ? `<span style="color:var(--secondary);">(${q.bracketWord})</span>` : ''}`;
-            if (isCorrect === true) { score++; resultHtml += `<div class="post-card" style="padding:15px; border:2px solid #10b981;"><h4 style="margin-bottom:10px;">${qTitleDisplay}</h4><div style="color:#10b981; font-weight:bold;">✅ إجابتك صحيحة: ${studentAnsText}</div></div>`; } 
-            else if (isCorrect === false) { resultHtml += `<div class="post-card" style="padding:15px; border:2px solid #ef4444;"><h4 style="margin-bottom:10px;">${qTitleDisplay}</h4><div style="color:#ef4444; font-weight:bold; margin-bottom:8px;">❌ إجابتك: ${studentAnsText}</div><div style="color:#10b981; font-weight:bold; background:rgba(16,185,129,0.1); padding:8px; border-radius:8px;">✅ الإجابة الصحيحة: ${correctAnsText}</div></div>`; } 
-            else { resultHtml += `<div class="post-card" style="padding:15px; border:2px solid var(--blue-strip);"><h4 style="margin-bottom:10px;">${qTitleDisplay}</h4><div style="font-weight:bold; margin-bottom:8px;">📝 إجابتك: ${studentAnsText}</div><div style="color:var(--blue-strip); font-weight:bold;">سيتم التقييم من المعلم</div></div>`; }
+            
+            if (isCorrect === true) { 
+                score++; 
+                resultHtml += `<div class="post-card" style="padding:15px; border:2px solid #10b981;"><h4 style="margin-bottom:10px;">${qTitleDisplay}</h4><div style="color:#10b981; font-weight:bold;">✅ إجابتك صحيحة: ${studentAnsText}</div></div>`; 
+            } 
+            else if (isCorrect === false) { 
+                resultHtml += `<div class="post-card" style="padding:15px; border:2px solid #ef4444;"><h4 style="margin-bottom:10px;">${qTitleDisplay}</h4><div style="color:#ef4444; font-weight:bold; margin-bottom:8px;">❌ إجابتك: ${studentAnsText}</div><div style="color:#10b981; font-weight:bold; background:rgba(16,185,129,0.1); padding:8px; border-radius:8px;">✅ الإجابة الصحيحة: ${correctAnsText}</div></div>`; 
+            } 
+            else { 
+                resultHtml += `<div class="post-card" style="padding:15px; border:2px solid var(--blue-strip);"><h4 style="margin-bottom:10px;">${qTitleDisplay}</h4><div style="font-weight:bold; margin-bottom:8px;">📝 إجابتك: ${studentAnsText}</div><div style="color:var(--blue-strip); font-weight:bold;">سيتم التقييم من المعلم</div></div>`; 
+            }
         });
 
         await db.collection('exam_results').add({ examId: currentExam.id, username: currentUserName, score, totalAutoGraded, submittedAt: firebase.firestore.FieldValue.serverTimestamp() });
-        const userRef = await db.collection('users').where('username','==',currentUserName).get(); if(!userRef.empty && !currentUserIsAdmin) await db.collection('users').doc(userRef.docs[0].id).update({score: firebase.firestore.FieldValue.increment(score)});
+        const userRef = await db.collection('users').where('username','==',currentUserName).get(); 
+        if(!userRef.empty && !currentUserIsAdmin) await db.collection('users').doc(userRef.docs[0].id).update({score: firebase.firestore.FieldValue.increment(score)});
+        
         document.getElementById('liveExamModal').style.display = 'none'; 
         document.getElementById('resultContent').innerHTML = `<div style="text-align:center; margin-bottom:30px; background:var(--card-bg); padding:20px; border-radius:15px; box-shadow:0 4px 10px rgba(0,0,0,0.1);"><h2 style="color:var(--primary); font-weight:900; font-size:26px; margin-bottom:10px;">درجتك التلقائية</h2><div style="font-size:35px; font-weight:900; color:#10b981;">${score} <span style="font-size:20px;">من ${totalAutoGraded}</span></div></div>${resultHtml}<button class="btn-primary" style="margin-top:20px;" onclick="closeModal('resultModal'); loadExams();">العودة للامتحانات</button>`;
-        document.getElementById('resultModal').style.display = 'block'; currentExam = null;
+        document.getElementById('resultModal').style.display = 'block'; 
+        currentExam = null;
     }
 
-    // --- المنشورات والواجبات ---
-    async function publishNews() { const text=document.getElementById('newsText').value; if(text){ await db.collection('news').add({text, createdAt:firebase.firestore.FieldValue.serverTimestamp()}); document.getElementById('newsText').value=''; alert('تم النشر'); } }
-    function loadNews() { db.collection('news').orderBy('createdAt','desc').onSnapshot(snap=>{ const c=document.getElementById('newsContainer'); c.innerHTML=''; if(snap.empty) c.innerHTML='<div class="empty-state">لا يوجد أخبار</div>'; snap.forEach(doc=>{ const ad=currentUserIsAdmin?`<button class="delete-btn" style="width:auto; padding:5px; font-size:12px;" onclick="deleteDocument('news','${doc.id}')">مسح</button>`:''; c.insertAdjacentHTML('beforeend',`<div class="news-card"><div style="display:flex; justify-content:space-between; font-weight:900; margin-bottom:10px;"><span>🔴 تنبيه هام</span>${ad}</div><p style="font-size:16px; font-weight:bold; line-height:1.6;">${doc.data().text}</p></div>`); }); }); }
+    // --- المنشورات والواجبات والأخبار ---
+    async function publishNews() { 
+        const text=document.getElementById('newsText').value; 
+        if(text){ await db.collection('news').add({text, createdAt:firebase.firestore.FieldValue.serverTimestamp()}); document.getElementById('newsText').value=''; alert('تم النشر'); } 
+    }
     
-    async function publishQuiz() { const q=document.getElementById('quizQ').value; const a=document.getElementById('quizA').value; if(q&&a){ await db.collection('quizzes').add({question:q, answer:a, createdAt:firebase.firestore.FieldValue.serverTimestamp()}); document.getElementById('quizQ').value=''; document.getElementById('quizA').value=''; alert('تم'); } }
-    function loadQuizzes() { db.collection('quizzes').orderBy('createdAt','desc').onSnapshot(snap=>{ const c=document.getElementById('quizContainer'); c.innerHTML=''; if(snap.empty) c.innerHTML='<div class="empty-state">لا يوجد أسئلة</div>'; snap.forEach(doc=>{ const d=doc.data(); const ad=currentUserIsAdmin?`<button class="delete-btn" style="width:auto; margin-bottom:10px;" onclick="deleteDocument('quizzes','${doc.id}')">مسح</button>`:''; if(answeredQuizzes.includes(doc.id)||currentUserIsAdmin){ c.insertAdjacentHTML('beforeend',`<div class="quiz-card">${ad}<div style="font-size:18px; font-weight:900; margin-bottom:10px;">❓ ${d.question}</div><div class="quiz-ans-box">✅ الإجابة: ${d.answer}</div></div>`); } else { c.insertAdjacentHTML('beforeend',`<div class="quiz-card" id="q-${doc.id}"><div style="font-size:18px; font-weight:900; margin-bottom:10px; color:var(--primary);">❓ ${d.question}</div><input type="text" id="ans-${doc.id}" placeholder="اكتب الإجابة..." style="margin-bottom:10px;"><button class="btn-primary" onclick="submitAns('${doc.id}','${d.answer}')">إرسال</button></div>`); } }); }); }
+    function loadNews() { 
+        db.collection('news').orderBy('createdAt','desc').onSnapshot(snap=>{ 
+            const c=document.getElementById('newsContainer'); c.innerHTML=''; 
+            if(snap.empty) c.innerHTML='<div class="empty-state">لا يوجد أخبار</div>'; 
+            snap.forEach(doc=>{ 
+                const d = doc.data();
+                markAsSeen('news', doc.id, d.seenBy);
+                const ad=currentUserIsAdmin?`<div style="display:flex; gap:5px;"><button class="btn-accept" style="padding:5px 10px; font-size:12px; border-radius:5px;" onclick="openViews('news','${doc.id}')">👁️ المشاهدات</button><button class="delete-btn" style="padding:5px 10px; font-size:12px; border-radius:5px;" onclick="deleteDocument('news','${doc.id}')">مسح</button></div>`:''; 
+                c.insertAdjacentHTML('beforeend',`<div class="news-card"><div style="display:flex; justify-content:space-between; font-weight:900; margin-bottom:10px;"><span>🔴 تنبيه هام</span>${ad}</div><p style="font-size:16px; font-weight:bold; line-height:1.6;">${d.text}</p></div>`); 
+            }); 
+        }); 
+    }
+    
+    async function publishQuiz() { 
+        const q=document.getElementById('quizQ').value; const a=document.getElementById('quizA').value; 
+        if(q&&a){ await db.collection('quizzes').add({question:q, answer:a, createdAt:firebase.firestore.FieldValue.serverTimestamp()}); document.getElementById('quizQ').value=''; document.getElementById('quizA').value=''; alert('تم'); } 
+    }
+    
+    function loadQuizzes() { 
+        db.collection('quizzes').orderBy('createdAt','desc').onSnapshot(snap=>{ 
+            const c=document.getElementById('quizContainer'); c.innerHTML=''; 
+            if(snap.empty) c.innerHTML='<div class="empty-state">لا يوجد أسئلة</div>'; 
+            snap.forEach(doc=>{ 
+                const d=doc.data(); 
+                markAsSeen('quizzes', doc.id, d.seenBy);
+                const ad=currentUserIsAdmin?`<div style="display:flex; justify-content:space-between; margin-bottom:10px;"><button class="btn-accept" style="padding:5px 15px; border-radius:8px;" onclick="openViews('quizzes','${doc.id}')">👁️ المشاهدات</button><button class="delete-btn" onclick="deleteDocument('quizzes','${doc.id}')">مسح</button></div>`:''; 
+                if(answeredQuizzes.includes(doc.id)||currentUserIsAdmin){ 
+                    c.insertAdjacentHTML('beforeend',`<div class="quiz-card">${ad}<div style="font-size:18px; font-weight:900; margin-bottom:10px;">❓ ${d.question}</div><div class="quiz-ans-box">✅ الإجابة: ${d.answer}</div></div>`); 
+                } else { 
+                    c.insertAdjacentHTML('beforeend',`<div class="quiz-card" id="q-${doc.id}"><div style="font-size:18px; font-weight:900; margin-bottom:10px; color:var(--primary);">❓ ${d.question}</div><input type="text" id="ans-${doc.id}" placeholder="اكتب الإجابة..." style="margin-bottom:10px;"><button class="btn-primary" onclick="submitAns('${doc.id}','${d.answer}')">إرسال</button></div>`); 
+                } 
+            }); 
+        }); 
+    }
+    
     async function submitAns(id, correct) { const ans=document.getElementById(`ans-${id}`).value.trim(); if(!ans) return; answeredQuizzes.push(id); localStorage.setItem('answeredQuizzes', JSON.stringify(answeredQuizzes)); if(ans.toLowerCase()===correct.trim().toLowerCase()){ alert('صح! كسبت نقطة'); const ur=await db.collection('users').where('username','==',currentUserName).get(); if(!ur.empty) await db.collection('users').doc(ur.docs[0].id).update({score:firebase.firestore.FieldValue.increment(1)}); } else alert('خطأ! الإجابة هي: '+correct); loadQuizzes(); }
-    function openLeaderboard() { db.collection('users').orderBy('score','desc').limit(10).get().then(snap=>{ const list=document.getElementById('leaderboardList'); list.innerHTML=''; let r=1; snap.forEach(d=>{ const u=d.data(); if(u.username==='Admin'||u.score===0) return; let m=r===1?'🥇':r===2?'🥈':r===3?'🥉':'🎖️'; list.insertAdjacentHTML('beforeend',`<div style="display:flex; justify-content:space-between; padding:15px; border-bottom:1px solid var(--border-color); font-weight:bold;"><span>${m} ${u.username}</span><span style="color:var(--accent);">${u.score} نقطة</span></div>`); r++; }); if(list.innerHTML==='') list.innerHTML='<div class="empty-state">لا نقاط حتى الآن</div>'; document.getElementById('leaderboardModal').style.display='flex'; }); }
+    
+    function openLeaderboard() { 
+        db.collection('users').orderBy('score','desc').limit(10).get().then(snap=>{ 
+            const list=document.getElementById('leaderboardList'); list.innerHTML=''; let r=1; 
+            snap.forEach(d=>{ 
+                const u=d.data(); 
+                if(u.username==='Admin' || u.username === 'Admrtaha' || u.score===0) return; 
+                let m=r===1?'🥇':r===2?'🥈':r===3?'🥉':'🎖️'; 
+                list.insertAdjacentHTML('beforeend',`<div style="display:flex; justify-content:space-between; padding:15px; border-bottom:1px solid var(--border-color); font-weight:bold;"><span>${m} ${u.username}</span><span style="color:var(--accent);">${u.score} نقطة</span></div>`); 
+                r++; 
+            }); 
+            if(list.innerHTML==='') list.innerHTML='<div class="empty-state">لا نقاط حتى الآن</div>'; 
+            document.getElementById('leaderboardModal').style.display='flex'; 
+        }); 
+    }
 
-    async function publishPost() { const d=document.getElementById('customPostDate').value; const t=document.getElementById('postTasmee3').value; const h=document.getElementById('postHal').value; if(d){ await db.collection('posts').add({dateText:d, tasmee3:t, hal:h, createdAt:firebase.firestore.FieldValue.serverTimestamp()}); document.getElementById('customPostDate').value=''; document.getElementById('postTasmee3').value=''; document.getElementById('postHal').value=''; alert('تم'); } }
-    function loadPosts() { db.collection('posts').orderBy('createdAt','desc').onSnapshot(snap=>{ const c=document.getElementById('feedContainer'); c.innerHTML=''; snap.forEach(doc=>{ const d=doc.data(); const ad=currentUserIsAdmin?`<div class="admin-controls-strip"><button class="delete-btn" onclick="deleteDocument('posts','${doc.id}')">مسح الواجب 🗑️</button></div>`:''; c.insertAdjacentHTML('beforeend',`<div class="post-card">${ad}<div class="post-date">${d.dateText}</div><div class="post-content">${d.tasmee3?`<div class="post-box"><span class="badge bg-blue">تسميع</span><div class="box-text">${d.tasmee3}</div></div>`:''}${d.hal?`<div class="post-box"><span class="badge bg-red">حل</span><div class="box-text">${d.hal}</div></div>`:''}</div></div>`); }); }); }
+    async function publishPost() { 
+        const d=document.getElementById('customPostDate').value; const t=document.getElementById('postTasmee3').value; const h=document.getElementById('postHal').value; 
+        if(d){ await db.collection('posts').add({dateText:d, tasmee3:t, hal:h, createdAt:firebase.firestore.FieldValue.serverTimestamp()}); document.getElementById('customPostDate').value=''; document.getElementById('postTasmee3').value=''; document.getElementById('postHal').value=''; alert('تم'); } 
+    }
+    
+    function loadPosts() { 
+        db.collection('posts').orderBy('createdAt','desc').onSnapshot(snap=>{ 
+            const c=document.getElementById('feedContainer'); c.innerHTML=''; 
+            snap.forEach(doc=>{ 
+                const d=doc.data(); 
+                markAsSeen('posts', doc.id, d.seenBy);
+                const ad=currentUserIsAdmin?`<div class="admin-controls-strip" style="justify-content:space-between;"><button class="btn-accept" style="width:auto; border-radius:8px; padding:5px 15px;" onclick="openViews('posts','${doc.id}')">👁️ المشاهدات</button><button class="delete-btn" style="border-radius:8px;" onclick="deleteDocument('posts','${doc.id}')">مسح الواجب 🗑️</button></div>`:''; 
+                c.insertAdjacentHTML('beforeend',`<div class="post-card">${ad}<div class="post-date">${d.dateText}</div><div class="post-content">${d.tasmee3?`<div class="post-box"><span class="badge bg-blue">تسميع</span><div class="box-text">${d.tasmee3}</div></div>`:''}${d.hal?`<div class="post-box"><span class="badge bg-red">حل</span><div class="box-text">${d.hal}</div></div>`:''}</div></div>`); 
+            }); 
+        }); 
+    }
 
+    // --- السبورة ---
     function handleImageSelect(e) { const f=e.target.files[0]; if(f) { const r=new FileReader(); r.readAsDataURL(f); r.onload=ev=>{ const img=new Image(); img.src=ev.target.result; img.onload=()=>{ const cv=document.createElement('canvas'); const ctx=cv.getContext('2d'); cv.width=img.width>1600?1600:img.width; cv.height=img.height*(cv.width/img.width); ctx.drawImage(img,0,0,cv.width,cv.height); base64ImageToUpload=cv.toDataURL('image/jpeg',0.85); document.getElementById('previewImage').src=base64ImageToUpload; document.getElementById('boardPreviewCard').style.display='block'; document.getElementById('boardPreviewCard').scrollIntoView(); }}}}
+    
     function cancelBoardUpload() { base64ImageToUpload=""; document.getElementById('boardPreviewCard').style.display='none'; }
+    
     async function confirmBoardUpload() { const d=document.getElementById('boardCustomDate').value; if(d&&base64ImageToUpload){ await db.collection('board_requests').add({uploaderName:currentUserName, dateText:d, image:base64ImageToUpload, status:currentUserIsAdmin?'accepted':'pending', createdAt:firebase.firestore.FieldValue.serverTimestamp()}); cancelBoardUpload(); alert(currentUserIsAdmin?'تم!':'قيد المراجعة.'); } }
-    function loadBoardPosts() { db.collection('board_requests').orderBy('createdAt','desc').onSnapshot(snap=>{ const c=document.getElementById('boardFeedContainer'); c.innerHTML=''; snap.forEach(doc=>{ const d=doc.data(); if(d.status==='accepted'){ const ad=currentUserIsAdmin?`<div class="admin-controls-strip"><button class="delete-btn" onclick="deleteDocument('board_requests','${doc.id}')">مسح 🗑️</button></div>`:''; c.insertAdjacentHTML('beforeend',`<div class="post-card">${ad}<div class="board-header"><span>من: ${d.uploaderName}</span><span style="font-size:12px; background:var(--input-bg); padding:5px; border-radius:5px;">${d.dateText}</span></div><img src="${d.image}" class="board-img" onclick="document.getElementById('modalImg').src='${d.image}'; document.getElementById('imageModal').style.display='flex';"><div class="board-actions"><button class="btn-view" style="flex:1; padding:10px; border-radius:10px; background:var(--input-bg); color:var(--text-dark); border:none; font-weight:bold;" onclick="document.getElementById('modalImg').src='${d.image}'; document.getElementById('imageModal').style.display='flex';">👁️ مشاهدة</button><a href="${d.image}" download="Board.jpg" style="flex:1; padding:10px; border-radius:10px; background:var(--blue-strip); color:white; text-align:center; text-decoration:none; font-weight:bold;">⬇️ تحميل</a></div></div>`); }}); }); }
+    
+    function loadBoardPosts() { 
+        db.collection('board_requests').orderBy('createdAt','desc').onSnapshot(snap=>{ 
+            const c=document.getElementById('boardFeedContainer'); c.innerHTML=''; 
+            snap.forEach(doc=>{ 
+                const d=doc.data(); 
+                if(d.status==='accepted'){ 
+                    markAsSeen('board_requests', doc.id, d.seenBy);
+                    const ad=currentUserIsAdmin?`<div class="admin-controls-strip" style="justify-content:space-between;"><button class="btn-accept" style="width:auto; border-radius:8px; padding:5px 15px;" onclick="openViews('board_requests','${doc.id}')">👁️ المشاهدات</button><button class="delete-btn" style="border-radius:8px;" onclick="deleteDocument('board_requests','${doc.id}')">مسح 🗑️</button></div>`:''; 
+                    c.insertAdjacentHTML('beforeend',`<div class="post-card">${ad}<div class="board-header"><span>من: ${d.uploaderName}</span><span style="font-size:12px; background:var(--input-bg); padding:5px; border-radius:5px;">${d.dateText}</span></div><img src="${d.image}" class="board-img" onclick="document.getElementById('modalImg').src='${d.image}'; document.getElementById('imageModal').style.display='flex';"><div class="board-actions"><button class="btn-view" style="flex:1; padding:10px; border-radius:10px; background:var(--input-bg); color:var(--text-dark); border:none; font-weight:bold;" onclick="document.getElementById('modalImg').src='${d.image}'; document.getElementById('imageModal').style.display='flex';">👁️ مشاهدة</button><a href="${d.image}" download="Board.jpg" style="flex:1; padding:10px; border-radius:10px; background:var(--blue-strip); color:white; text-align:center; text-decoration:none; font-weight:bold;">⬇️ تحميل</a></div></div>`); 
+                }
+            }); 
+        }); 
+    }
 
-    function loadAllAccounts() { db.collection('users').orderBy('createdAt','desc').onSnapshot(snap=>{ const c=document.getElementById('accountsContainer'); c.innerHTML=''; snap.forEach(doc=>{ const u=doc.data(); if(u.username==='Admin')return; const isBan=u.status==='banned'; const bBtn=isBan?`<button class="btn-accept" onclick="updateDocStatus('users','${doc.id}','accepted')">فك الحظر</button>`:`<button class="btn-reject" onclick="document.getElementById('banUserId').value='${doc.id}'; document.getElementById('banModal').style.display='flex';">حظر</button>`; c.insertAdjacentHTML('beforeend',`<div class="post-card" style="padding:15px;"><div style="font-size:18px; font-weight:bold; color:var(--primary); margin-bottom:10px;">${u.username} ${isBan?'🚫':''}</div><div style="background:var(--input-bg); padding:8px; border-radius:8px; font-family:monospace; margin-bottom:10px;">🔑 ${u.password}</div><div style="font-size:14px; margin-bottom:10px;">النقاط: ${u.score||0} | الحالة: ${u.status==='pending'?'انتظار':u.status==='accepted'?'مقبول':'محظور'}</div><div class="action-btns">${bBtn}<button class="btn-reject" style="background:#475569;" onclick="deleteDocument('users','${doc.id}')">إزالة</button></div></div>`); }); }); }
+    // --- إدارة الحسابات ---
+    function loadAllAccounts() { 
+        db.collection('users').orderBy('createdAt','desc').onSnapshot(snap=>{ 
+            const c=document.getElementById('accountsContainer'); c.innerHTML=''; 
+            snap.forEach(doc=>{ 
+                const u=doc.data(); 
+                if(u.username==='Admin' || u.username === 'Admrtaha') return; 
+                const isBan=u.status==='banned'; const bBtn=isBan?`<button class="btn-accept" onclick="updateDocStatus('users','${doc.id}','accepted')">فك الحظر</button>`:`<button class="btn-reject" onclick="document.getElementById('banUserId').value='${doc.id}'; document.getElementById('banModal').style.display='flex';">حظر</button>`; 
+                c.insertAdjacentHTML('beforeend',`<div class="post-card" style="padding:15px;"><div style="font-size:18px; font-weight:bold; color:var(--primary); margin-bottom:10px;">${u.username} ${isBan?'🚫':''}</div><div style="background:var(--input-bg); padding:8px; border-radius:8px; font-family:monospace; margin-bottom:10px;">🔑 ${u.password}</div><div style="font-size:14px; margin-bottom:10px;">النقاط: ${u.score||0} | الحالة: ${u.status==='pending'?'انتظار':u.status==='accepted'?'مقبول':'محظور'}</div><div class="action-btns">${bBtn}<button class="btn-reject" style="background:#475569;" onclick="deleteDocument('users','${doc.id}')">إزالة</button></div></div>`); 
+            }); 
+        }); 
+    }
+    
     async function confirmBan() { const id=document.getElementById('banUserId').value; const t=document.getElementById('banType').value; let d=null; if(t==='temp'){ const days=parseInt(document.getElementById('banDays').value); if(!days)return; d=Date.now()+(days*86400000); } await db.collection('users').doc(id).update({status:'banned', banUntil:d}); closeModal('banModal'); }
-    function loadBoardRequests() { db.collection('board_requests').where('status','==','pending').onSnapshot(snap=>{ const c=document.getElementById('boardRequestsContainer'); c.innerHTML=''; snap.forEach(doc=>{ const d=doc.data(); c.insertAdjacentHTML('beforeend',`<div class="post-card" style="border:2px solid var(--accent);"><div class="board-header"><span>من: ${d.uploaderName}</span></div><img src="${d.image}" class="board-img"><div class="action-btns" style="padding:15px;"><button class="btn-accept" onclick="updateDocStatus('board_requests','${doc.id}','accepted')">قبول</button><button class="btn-reject" onclick="deleteDocument('board_requests','${doc.id}',false)">رفض</button></div></div>`); }); }); }
-    function loadRequests() { db.collection('users').where('status','==','pending').onSnapshot(snap=>{ const c=document.getElementById('requestsContainer'); c.innerHTML=''; snap.forEach(doc=>{ c.insertAdjacentHTML('beforeend',`<div class="post-box" style="margin-top:10px;"><strong>${doc.data().username}</strong><div class="action-btns"><button class="btn-accept" onclick="updateDocStatus('users','${doc.id}','accepted')">قبول</button><button class="btn-reject" onclick="deleteDocument('users','${doc.id}',false)">رفض</button></div></div>`); }); }); }
+    
+    function loadBoardRequests() { 
+        db.collection('board_requests').where('status','==','pending').onSnapshot(snap=>{ 
+            const c=document.getElementById('boardRequestsContainer'); c.innerHTML=''; 
+            snap.forEach(doc=>{ 
+                const d=doc.data(); c.insertAdjacentHTML('beforeend',`<div class="post-card" style="border:2px solid var(--accent);"><div class="board-header"><span>من: ${d.uploaderName}</span></div><img src="${d.image}" class="board-img"><div class="action-btns" style="padding:15px;"><button class="btn-accept" onclick="updateDocStatus('board_requests','${doc.id}','accepted')">قبول</button><button class="btn-reject" onclick="deleteDocument('board_requests','${doc.id}',false)">رفض</button></div></div>`); 
+            }); 
+        }); 
+    }
+    
+    function loadRequests() { 
+        db.collection('users').where('status','==','pending').onSnapshot(snap=>{ 
+            const c=document.getElementById('requestsContainer'); c.innerHTML=''; 
+            snap.forEach(doc=>{ 
+                c.insertAdjacentHTML('beforeend',`<div class="post-box" style="margin-top:10px;"><strong>${doc.data().username}</strong><div class="action-btns"><button class="btn-accept" onclick="updateDocStatus('users','${doc.id}','accepted')">قبول</button><button class="btn-reject" onclick="deleteDocument('users','${doc.id}',false)">رفض</button></div></div>`); 
+            }); 
+        }); 
+    }
 
     async function updateDocStatus(col,id,status) { try{ await db.collection(col).doc(id).update({status, banUntil:null}); }catch(e){} }
     async function deleteDocument(col,id,ask=true) { if(ask&&!confirm('مسح نهائي؟'))return; try{ await db.collection(col).doc(id).delete(); }catch(e){} }
