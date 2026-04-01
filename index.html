@@ -266,7 +266,7 @@
             <div class="admin-section" style="border: 2px solid #fdbb2d; background: rgba(253, 187, 45, 0.05);">
                 <h4 style="color:#fdbb2d; border-bottom: 2px solid rgba(253, 187, 45, 0.2);">🔔 اختبار الإشعارات</h4>
                 <p style="font-size:14px; font-weight:bold; color:#666; margin-bottom:15px;">اضغط هنا لتجربة وصول الإشعارات على هاتفك.</p>
-                <button class="btn-primary" style="background:linear-gradient(135deg, #fdbb2d, #ff9900);" onclick="sendNotification('تجربة الإشعارات ✉️', 'الإشعارات شغالة 100% يا هندسة! 🚀')">إرسال إشعار تجريبي ✉️</button>
+                <button class="btn-primary" style="background:linear-gradient(135deg, #fdbb2d, #ff9900);" onclick="testNotification()">إرسال إشعار تجريبي ✉️</button>
             </div>
 
             <div class="admin-section" style="border: 2px solid var(--blue-strip);">
@@ -289,7 +289,6 @@
             <button class="btn-primary" style="width:100%; background:#10b981; margin-top:10px; padding:15px; font-size:18px; border-radius:15px; box-shadow: 0 5px 15px rgba(16,185,129,0.3);" onclick="openAdminExamsResults()">الاطلاع على من حل الامتحانات 📋</button>
         </div>
     </div>
-
 </div>
 
 <div id="userExamsModal" class="modal">
@@ -345,7 +344,13 @@
 <div id="leaderboardModal" class="modal"><div class="modal-box" style="max-height:80vh; overflow-y:auto;"><span class="close-modal" onclick="closeModal('leaderboardModal')">&times;</span><h2 style="color:var(--accent); margin-bottom:20px;">🏆 أوائل المنصة</h2><div id="leaderboardList"></div></div></div>
 
 <script>
-    // --- إعدادات وتجهيز المنصة ---
+    // تسجيل Service Worker للإشعارات (خطوة إجبارية لأندرويد كروم)
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(function(err) {
+            console.log('SW registration failed: ', err);
+        });
+    }
+
     const firebaseConfig = { apiKey: "AIzaSyC_J9h4iGVrzOESGr-zgh0Qsu7yICEzW7g", authDomain: "taha-mahmoud.firebaseapp.com", projectId: "taha-mahmoud", storageBucket: "taha-mahmoud.firebasestorage.app", messagingSenderId: "722671283037", appId: "1:722671283037:web:226968fa4d3267b39b16b4" };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -358,56 +363,67 @@
     let examTimerInterval = null; 
     let examQuestionCount = 0;
 
-    // --- نظام الإشعارات (جديد) 🔔 ---
+    // --- الإشعارات المظبوطة 🔔 ---
     function requestNotificationPermission() {
         if ("Notification" in window) {
-            Notification.requestPermission().then(permission => {
-                if (permission === "granted") console.log("تم تفعيل الإشعارات");
-            });
+            Notification.requestPermission();
         }
     }
 
     function sendNotification(title, body) {
-        if ("Notification" in window && Notification.permission === "granted") {
-            new Notification(title, { body: body, icon: 'logo.png' });
+        if ("Notification" in window) {
+            if (Notification.permission === "granted") {
+                navigator.serviceWorker.ready.then(function(registration) {
+                    registration.showNotification(title, {
+                        body: body,
+                        icon: 'logo.png',
+                        vibrate: [200, 100, 200]
+                    });
+                });
+            }
         }
     }
 
-    // --- الوضع الليلي وتحديث الشعلة ---
-    function toggleDarkMode() {
-        document.body.classList.toggle('dark-mode');
-        const isDark = document.body.classList.contains('dark-mode');
-        localStorage.setItem('darkMode', isDark);
-        document.getElementById('darkModeBtn').innerText = isDark ? '☀️' : '🌙';
+    function testNotification() {
+        if ("Notification" in window) {
+            if (Notification.permission === "granted") {
+                sendNotification('تجربة الإشعارات ✉️', 'الإشعارات شغالة 100% يا هندسة! 🚀');
+                alert("تم إرسال الإشعار التجريبي بنجاح! 🚀 لو مشفتهوش، اتأكد إنك فاتح إشعارات (Chrome) من إعدادات الموبايل.");
+            } else if (Notification.permission === "denied") {
+                alert("إنت قافل الإشعارات من المتصفح يا هندسة! ❌ ادخل على إعدادات الموقع واعملها السماح (Allow).");
+            } else {
+                Notification.requestPermission().then(permission => {
+                    if(permission === 'granted') {
+                        testNotification();
+                    } else {
+                        alert("لقد رفضت صلاحية الإشعارات! ❌");
+                    }
+                });
+            }
+        } else {
+            alert("متصفحك لا يدعم الإشعارات 😔");
+        }
     }
+
+    function toggleDarkMode() { document.body.classList.toggle('dark-mode'); const isDark = document.body.classList.contains('dark-mode'); localStorage.setItem('darkMode', isDark); document.getElementById('darkModeBtn').innerText = isDark ? '☀️' : '🌙'; }
 
     async function updateDailyStreak(userId, userData) {
         if(userData.username === 'Admin' || userData.username === 'Admrtaha') return;
         const today = new Date(); today.setHours(0, 0, 0, 0); const todayTime = today.getTime(); const oneDay = 86400000;
         const lastLogin = userData.lastLogin || 0; let currentStreak = userData.streak || 0;
         if (lastLogin === todayTime) { document.getElementById('userStreak').innerText = `🔥 ${currentStreak}`; } 
-        else if (todayTime - lastLogin === oneDay) {
-            currentStreak++; await db.collection('users').doc(userId).update({ streak: currentStreak, lastLogin: todayTime });
-            document.getElementById('userStreak').innerText = `🔥 ${currentStreak}`;
-        } else {
-            currentStreak = 1; await db.collection('users').doc(userId).update({ streak: currentStreak, lastLogin: todayTime });
-            document.getElementById('userStreak').innerText = `🔥 ${currentStreak}`;
-        }
+        else if (todayTime - lastLogin === oneDay) { currentStreak++; await db.collection('users').doc(userId).update({ streak: currentStreak, lastLogin: todayTime }); document.getElementById('userStreak').innerText = `🔥 ${currentStreak}`; } 
+        else { currentStreak = 1; await db.collection('users').doc(userId).update({ streak: currentStreak, lastLogin: todayTime }); document.getElementById('userStreak').innerText = `🔥 ${currentStreak}`; }
     }
 
     window.onload = function() {
-        requestNotificationPermission(); // طلب الإذن بالإشعارات أول ما الموقع يفتح
+        requestNotificationPermission(); 
         if(localStorage.getItem('darkMode') === 'true') { document.body.classList.add('dark-mode'); document.getElementById('darkModeBtn').innerText = '☀️'; }
         const savedUser = localStorage.getItem('loggedInUser'); const savedIsAdmin = localStorage.getItem('isAdmin') === 'true';
         if (savedUser) {
-            currentUserName = savedUser; currentUserIsAdmin = savedIsAdmin;
-            document.getElementById('displayUserName').innerText = currentUserName;
-            if (currentUserIsAdmin) { 
-                document.getElementById('adminLink').style.display = 'flex'; document.getElementById('adminAccountsLink').style.display = 'flex'; document.getElementById('adminAnalyticsLink').style.display = 'flex'; document.getElementById('studentStatsLink').style.display = 'none'; loadAdminData(); 
-            } else {
-                document.getElementById('adminLink').style.display = 'none'; document.getElementById('adminAccountsLink').style.display = 'none'; document.getElementById('adminAnalyticsLink').style.display = 'none'; document.getElementById('studentStatsLink').style.display = 'flex'; 
-                db.collection('users').where('username','==',currentUserName).get().then(snap => { if(!snap.empty) updateDailyStreak(snap.docs[0].id, snap.docs[0].data()); });
-            }
+            currentUserName = savedUser; currentUserIsAdmin = savedIsAdmin; document.getElementById('displayUserName').innerText = currentUserName;
+            if (currentUserIsAdmin) { document.getElementById('adminLink').style.display = 'flex'; document.getElementById('adminAccountsLink').style.display = 'flex'; document.getElementById('adminAnalyticsLink').style.display = 'flex'; document.getElementById('studentStatsLink').style.display = 'none'; loadAdminData(); } 
+            else { document.getElementById('adminLink').style.display = 'none'; document.getElementById('adminAccountsLink').style.display = 'none'; document.getElementById('adminAnalyticsLink').style.display = 'none'; document.getElementById('studentStatsLink').style.display = 'flex'; db.collection('users').where('username','==',currentUserName).get().then(snap => { if(!snap.empty) updateDailyStreak(snap.docs[0].id, snap.docs[0].data()); }); }
             switchPage('mainPage'); loadPublicData();
         }
     };
@@ -424,17 +440,12 @@
     window.onclick = function(e) { if (!e.target.matches('.menu-btn') && !e.target.matches('#darkModeBtn')) { document.querySelectorAll(".dropdown-menu").forEach(d => d.classList.remove('show')); } }
     function closeModal(id) { document.getElementById(id).style.display = "none"; }
 
-    function logout() { 
-        localStorage.removeItem('loggedInUser'); localStorage.removeItem('isAdmin'); currentUserIsAdmin = false; currentUserName = "";
-        document.getElementById('loginUsername').value = ''; document.getElementById('loginPassword').value = '';
-        switchPage('loginPage'); 
-    }
+    function logout() { localStorage.removeItem('loggedInUser'); localStorage.removeItem('isAdmin'); currentUserIsAdmin = false; currentUserName = ""; document.getElementById('loginUsername').value = ''; document.getElementById('loginPassword').value = ''; switchPage('loginPage'); }
 
     async function handleLogin(e) {
         e.preventDefault(); const user = document.getElementById('loginUsername').value; const pass = document.getElementById('loginPassword').value;
         if ((user === 'Admin' && pass === '2013716') || (user === 'Admrtaha' && pass === 'Mrtaha')) {
-            currentUserIsAdmin = true; currentUserName = user;
-            localStorage.setItem('loggedInUser', currentUserName); localStorage.setItem('isAdmin', 'true');
+            currentUserIsAdmin = true; currentUserName = user; localStorage.setItem('loggedInUser', currentUserName); localStorage.setItem('isAdmin', 'true');
             document.getElementById('adminLink').style.display='flex'; document.getElementById('adminAccountsLink').style.display='flex'; document.getElementById('adminAnalyticsLink').style.display='flex'; document.getElementById('studentStatsLink').style.display='none';
             document.getElementById('displayUserName').innerText=currentUserName; document.getElementById('userStreak').innerText='';
             requestNotificationPermission(); switchPage('mainPage'); loadPublicData(); loadAdminData(); return;
@@ -445,8 +456,7 @@
             const uData = snap.docs[0].data(); const uId = snap.docs[0].id;
             if (uData.status === 'banned') { if (uData.banUntil && uData.banUntil > Date.now()) return alert(`محظور حتى ${new Date(uData.banUntil).toLocaleDateString()}`); else if (!uData.banUntil) return alert('محظور نهائياً.'); else await db.collection('users').doc(uId).update({status:'accepted', banUntil:null}); }
             else if (uData.status !== 'accepted') return alert(uData.status==='pending'?'قيد المراجعة':'مرفوض');
-            currentUserIsAdmin = false; currentUserName = uData.username;
-            localStorage.setItem('loggedInUser', currentUserName); localStorage.setItem('isAdmin', 'false');
+            currentUserIsAdmin = false; currentUserName = uData.username; localStorage.setItem('loggedInUser', currentUserName); localStorage.setItem('isAdmin', 'false');
             document.getElementById('adminLink').style.display='none'; document.getElementById('adminAccountsLink').style.display='none'; document.getElementById('adminAnalyticsLink').style.display='none'; document.getElementById('studentStatsLink').style.display='flex';
             document.getElementById('displayUserName').innerText = currentUserName;
             requestNotificationPermission(); updateDailyStreak(uId, uData); switchPage('mainPage'); loadPublicData();
@@ -457,39 +467,28 @@
         e.preventDefault(); const name = document.getElementById('signupName').value; const pass = document.getElementById('signupPassword').value; const conf = document.getElementById('signupConfirm').value;
         if (pass !== conf) return alert('كلمتا المرور غير متطابقتين!');
         const check = await db.collection('users').where('username', '==', name).get(); if(!check.empty) return alert('مستخدم بالفعل.');
-        await db.collection('users').add({ username: name, password: pass, status: 'pending', score: 0, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-        alert('تم إرسال الطلب للمراجعة.'); switchPage('loginPage');
+        await db.collection('users').add({ username: name, password: pass, status: 'pending', score: 0, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); alert('تم إرسال الطلب للمراجعة.'); switchPage('loginPage');
     }
 
     function loadPublicData() { loadPosts(); loadBoardPosts(); loadNews(); loadQuizzes(); loadExams(); }
     function loadAdminData() { loadRequests(); loadBoardRequests(); loadAllAccounts(); loadAnalytics(); }
 
-    // --- إحصائيات الطالب وتقييمه 📈 ---
     async function loadStudentStats() {
         try {
-            const userSnap = await db.collection('users').where('username', '==', currentUserName).get();
-            if(userSnap.empty) return;
-            const userData = userSnap.docs[0].data();
+            const userSnap = await db.collection('users').where('username', '==', currentUserName).get(); if(userSnap.empty) return; const userData = userSnap.docs[0].data();
             const examsSnap = await db.collection('exam_results').where('username', '==', currentUserName).get();
-            let uniqueExams = new Set(); examsSnap.forEach(doc => uniqueExams.add(doc.data().examId));
-            const examsCount = uniqueExams.size;
+            let uniqueExams = new Set(); examsSnap.forEach(doc => uniqueExams.add(doc.data().examId)); const examsCount = uniqueExams.size;
             const totalScore = userData.score || 0; const streakCount = userData.streak || 0; const quizzesCount = answeredQuizzes.length;
-            document.getElementById('myTotalScore').innerText = totalScore; document.getElementById('myExamsCount').innerText = examsCount;
-            document.getElementById('myQuizzesCount').innerText = quizzesCount; document.getElementById('myStreakCount').innerText = streakCount;
+            document.getElementById('myTotalScore').innerText = totalScore; document.getElementById('myExamsCount').innerText = examsCount; document.getElementById('myQuizzesCount').innerText = quizzesCount; document.getElementById('myStreakCount').innerText = streakCount;
 
-            let rawRating = (totalScore * 0.2) + (examsCount * 0.5) + (quizzesCount * 0.1) + 1;
-            let finalRating = Math.min(10, rawRating).toFixed(1);
+            let rawRating = (totalScore * 0.2) + (examsCount * 0.5) + (quizzesCount * 0.1) + 1; let finalRating = Math.min(10, rawRating).toFixed(1);
             document.getElementById('studentRatingNum').innerText = finalRating; document.getElementById('studentRatingCircle').style.setProperty('--rating-percent', `${(finalRating / 10) * 100}%`);
 
             const msgEl = document.getElementById('studentMotivationalMsg');
-            if(finalRating >= 9) { msgEl.innerText = "أسطورة الدفعة! استمر يا بطل 🥇"; msgEl.style.color = "#10b981"; }
-            else if(finalRating >= 7) { msgEl.innerText = "مستواك ممتاز، قربت تقفل التقييم 🚀"; msgEl.style.color = "var(--primary)"; }
-            else if(finalRating >= 4) { msgEl.innerText = "بطل، بس محتاجين نشد حيلنا شوية 💪"; msgEl.style.color = "#ff9800"; }
-            else { msgEl.innerText = "البداية ديما صعبة، حل واجبات أكتر عشان تعلى! 📈"; msgEl.style.color = "#ff4757"; }
+            if(finalRating >= 9) { msgEl.innerText = "أسطورة الدفعة! استمر يا بطل 🥇"; msgEl.style.color = "#10b981"; } else if(finalRating >= 7) { msgEl.innerText = "مستواك ممتاز، قربت تقفل التقييم 🚀"; msgEl.style.color = "var(--primary)"; } else if(finalRating >= 4) { msgEl.innerText = "بطل، بس محتاجين نشد حيلنا شوية 💪"; msgEl.style.color = "#ff9800"; } else { msgEl.innerText = "البداية ديما صعبة، حل واجبات أكتر عشان تعلى! 📈"; msgEl.style.color = "#ff4757"; }
         } catch (e) {}
     }
 
-    // --- الإحصائيات للأدمن ---
     function loadAnalytics() {
         if (!currentUserIsAdmin) return;
         db.collection('users').onSnapshot(snap => {
@@ -500,36 +499,22 @@
         db.collection('exams').onSnapshot(snap => { document.getElementById('statExamsNum').innerText = snap.size; });
     }
 
-    // --- نظام المشاهدات ---
-    function markAsSeen(col, id, seenMap) {
-        if (currentUserIsAdmin || !currentUserName) return;
-        if (!seenMap || !seenMap[currentUserName]) { db.collection(col).doc(id).set({ seenBy: { [currentUserName]: Date.now() } }, { merge: true }); }
-    }
-
+    function markAsSeen(col, id, seenMap) { if (currentUserIsAdmin || !currentUserName) return; if (!seenMap || !seenMap[currentUserName]) { db.collection(col).doc(id).set({ seenBy: { [currentUserName]: Date.now() } }, { merge: true }); } }
     async function openViews(col, id) {
         document.getElementById('viewsModal').style.display = 'flex'; const list = document.getElementById('viewsList'); list.innerHTML = '<div style="text-align:center; padding:20px; font-weight:bold;">جاري التحميل... ⏳</div>';
         try {
             const doc = await db.collection(col).doc(id).get(); const d = doc.data(); list.innerHTML = ''; let hasViews = false;
-            if (d.seenBy) {
-                const views = Object.entries(d.seenBy).sort((a,b) => b[1] - a[1]);
-                for (const [user, time] of views) { hasViews = true; const dateStr = new Date(time).toLocaleString('ar-EG', { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' }); list.insertAdjacentHTML('beforeend', `<div style="display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid var(--border-color); align-items:center;"><strong style="color:var(--text-dark); font-size:16px;">👤 ${user}</strong><span style="background:var(--input-bg); padding:5px 10px; border-radius:8px; font-size:13px; color:var(--text-dark); font-weight:bold;">${dateStr}</span></div>`); }
-            }
+            if (d.seenBy) { const views = Object.entries(d.seenBy).sort((a,b) => b[1] - a[1]); for (const [user, time] of views) { hasViews = true; const dateStr = new Date(time).toLocaleString('ar-EG', { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' }); list.insertAdjacentHTML('beforeend', `<div style="display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid var(--border-color); align-items:center;"><strong style="color:var(--text-dark); font-size:16px;">👤 ${user}</strong><span style="background:var(--input-bg); padding:5px 10px; border-radius:8px; font-size:13px; color:var(--text-dark); font-weight:bold;">${dateStr}</span></div>`); } }
             if(!hasViews) list.innerHTML = '<div class="empty-state">لم يشاهدها أحد حتى الآن 👁️</div>';
         } catch(e) { list.innerHTML = '<div class="empty-state" style="color:#ff4757;">حدث خطأ ❌</div>'; }
     }
 
-    // ==========================================
-    // 📋 قسم متابعة نتائج الامتحانات (للأدمن) 📋
-    // ==========================================
     function openAdminExamsResults() {
         switchPage('adminExamsResultsPage'); document.getElementById('adminExamsList').style.display = 'block'; document.getElementById('adminStudentsList').style.display = 'none';
         db.collection('exams').orderBy('createdAt', 'desc').get().then(snap => {
             const cont = document.getElementById('adminExamsList'); cont.innerHTML = '';
             if(snap.empty) { cont.innerHTML = '<div class="empty-state">لا توجد امتحانات لعرضها</div>'; return; }
-            snap.forEach(doc => {
-                const ex = doc.data();
-                cont.insertAdjacentHTML('beforeend', `<div class="post-card" style="padding:15px; cursor:pointer; border:2px solid var(--blue-strip); background:linear-gradient(135deg, var(--card-bg), var(--input-bg)); text-align:center;" onclick="viewExamTakers('${doc.id}', '${ex.title.replace(/'/g, "\\'")}')"><h3 style="color:var(--primary); margin:0;">📋 ${ex.title}</h3><p style="margin-top:10px; font-weight:bold; color:#888;">اضغط لعرض إجابات الطلبة 👆</p></div>`);
-            });
+            snap.forEach(doc => { const ex = doc.data(); cont.insertAdjacentHTML('beforeend', `<div class="post-card" style="padding:15px; cursor:pointer; border:2px solid var(--blue-strip); background:linear-gradient(135deg, var(--card-bg), var(--input-bg)); text-align:center;" onclick="viewExamTakers('${doc.id}', '${ex.title.replace(/'/g, "\\'")}')"><h3 style="color:var(--primary); margin:0;">📋 ${ex.title}</h3><p style="margin-top:10px; font-weight:bold; color:#888;">اضغط لعرض إجابات الطلبة 👆</p></div>`); });
         });
     }
     function backToAdminExams() { document.getElementById('adminExamsList').style.display = 'block'; document.getElementById('adminStudentsList').style.display = 'none'; }
@@ -538,23 +523,15 @@
         const cont = document.getElementById('adminStudentsContainer'); cont.innerHTML = '<div style="text-align:center; padding:20px; font-weight:bold; font-size:18px;">جاري سحب بيانات الطلبة... ⏳</div>';
         const snap = await db.collection('exam_results').where('examId','==',exId).get(); cont.innerHTML = `<h3 style="color:var(--secondary); text-align:center; margin-bottom:20px;">امتحان: ${exTitle}</h3>`;
         if(snap.empty) { cont.innerHTML += '<div class="empty-state">لم يقم أحد بحل هذا الامتحان بعد 🤷‍♂️</div>'; return; }
-        
-        let allRes = []; snap.forEach(doc => allRes.push({ id: doc.id, ...doc.data() }));
-        allRes.sort((a,b) => { let ta = a.submittedAt ? a.submittedAt.toMillis() : 0; let tb = b.submittedAt ? b.submittedAt.toMillis() : 0; return ta - tb; });
-        let attemptsByStudent = {};
-        allRes.forEach(d => { if(!attemptsByStudent[d.username]) attemptsByStudent[d.username] = []; attemptsByStudent[d.username].push(d); });
-        
+        let allRes = []; snap.forEach(doc => allRes.push({ id: doc.id, ...doc.data() })); allRes.sort((a,b) => { let ta = a.submittedAt ? a.submittedAt.toMillis() : 0; let tb = b.submittedAt ? b.submittedAt.toMillis() : 0; return ta - tb; });
+        let attemptsByStudent = {}; allRes.forEach(d => { if(!attemptsByStudent[d.username]) attemptsByStudent[d.username] = []; attemptsByStudent[d.username].push(d); });
         for (const [studentName, attempts] of Object.entries(attemptsByStudent)) {
             let html = `<div class="post-card" style="padding:15px; border-right:5px solid var(--accent);"><h4 style="color:var(--primary); margin-bottom:10px; font-size:18px;">👤 ${studentName}</h4><div style="display:flex; flex-direction:column; gap:8px;">`;
-            attempts.forEach((att, idx) => {
-                let dStr = att.submittedAt ? new Date(att.submittedAt.toMillis()).toLocaleString('ar-EG', {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : '';
-                html += `<button class="btn-view" style="padding:10px 15px; font-size:15px; display:flex; justify-content:space-between; align-items:center; background:var(--bg-color);" onclick="renderSpecificResult('${exId}', '${att.id}', '${studentName}')"><span style="font-weight:900; color:var(--primary);">المحاولة ${idx+1} <span style="color:#10b981;">(${att.score}/${att.totalAutoGraded})</span></span> <span style="color:#888; font-size:12px;">${dStr} 👁️</span></button>`;
-            });
+            attempts.forEach((att, idx) => { let dStr = att.submittedAt ? new Date(att.submittedAt.toMillis()).toLocaleString('ar-EG', {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : ''; html += `<button class="btn-view" style="padding:10px 15px; font-size:15px; display:flex; justify-content:space-between; align-items:center; background:var(--bg-color);" onclick="renderSpecificResult('${exId}', '${att.id}', '${studentName}')"><span style="font-weight:900; color:var(--primary);">المحاولة ${idx+1} <span style="color:#10b981;">(${att.score}/${att.totalAutoGraded})</span></span> <span style="color:#888; font-size:12px;">${dStr} 👁️</span></button>`; });
             html += `</div></div>`; cont.insertAdjacentHTML('beforeend', html);
         }
     }
 
-    // --- الامتحانات الإلكترونية ---
     function addQuestionField() {
         examQuestionCount++;
         const html = `<div class="exam-q-block" id="examQBox-${examQuestionCount}"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><strong style="color:var(--text-dark);">السؤال رقم ${examQuestionCount}</strong><button class="delete-btn" style="padding:2px 8px; width:auto;" onclick="document.getElementById('examQBox-${examQuestionCount}').remove()">حذف</button></div><select class="q-type" style="margin-bottom:10px;" onchange="toggleExamQType(${examQuestionCount}, this.value)"><option value="mcq">اختياري (MCQ)</option><option value="rewrite">سؤال أعد الكتابة (Rewrite)</option><option value="text">أكمل الفراغ (إجابة قصيرة)</option><option value="para">برجراف / مقال (بدون تصحيح تلقائي)</option></select><textarea class="q-text" placeholder="رأس السؤال / الجملة..." style="margin-bottom:10px; min-height:60px;"></textarea><div id="mcqOpts-${examQuestionCount}"><input type="text" class="opt-1" placeholder="الاختيار الأول" style="margin-bottom:5px;"><input type="text" class="opt-2" placeholder="الاختيار الثاني" style="margin-bottom:5px;"><input type="text" class="opt-3" placeholder="الاختيار الثالث" style="margin-bottom:5px;"><input type="text" class="opt-4" placeholder="الاختيار الرابع" style="margin-bottom:10px;"><select class="mcq-correct"><option value="1">الإجابة الصحيحة: الأول</option><option value="2">الإجابة الصحيحة: الثاني</option><option value="3">الإجابة الصحيحة: الثالث</option><option value="4">الإجابة الصحيحة: الرابع</option></select></div><div id="rewriteOpts-${examQuestionCount}" style="display:none;"><input type="text" class="rewrite-bracket" placeholder="الكلمة بين الأقواس" style="margin-bottom:10px; border: 2px solid var(--red-strip);"><input type="text" class="rewrite-correct" placeholder="الجملة الصحيحة (للتصحيح)"></div><div id="textOpts-${examQuestionCount}" style="display:none;"><input type="text" class="text-correct" placeholder="الكلمة الصحيحة (للتصحيح)"></div></div>`;
@@ -593,7 +570,6 @@
             snap.forEach(doc => { const d = doc.data(); examsArray.push({id: doc.id, ...d}); markAsSeen('exams', doc.id, d.seenBy); });
             examsArray.sort((a,b) => { let timeA = a.createdAt ? a.createdAt.toMillis() : Date.now(); let timeB = b.createdAt ? b.createdAt.toMillis() : Date.now(); return timeB - timeA; });
             
-            // إرسال إشعار لو في امتحان جديد نزل من أقل من 10 ثواني
             snap.docChanges().forEach(change => {
                 if (change.type === "added" && !currentUserIsAdmin) {
                     const data = change.doc.data();
@@ -620,8 +596,7 @@
     }
 
     async function startExam(exId) {
-        const doc = await db.collection('exams').doc(exId).get(); currentExam = { id: doc.id, ...doc.data() };
-        document.getElementById('liveExamTitle').innerText = currentExam.title;
+        const doc = await db.collection('exams').doc(exId).get(); currentExam = { id: doc.id, ...doc.data() }; document.getElementById('liveExamTitle').innerText = currentExam.title;
         const qCont = document.getElementById('liveExamQuestions'); qCont.innerHTML = '';
         currentExam.questions.forEach((q, i) => {
             let inputHtml = ''; let qTitle = `<h4 style="color:var(--primary); margin-bottom:15px; line-height:1.6; font-size:18px;">${i+1}- ${q.text}</h4>`;
@@ -636,70 +611,50 @@
     function startTimer(seconds) { clearInterval(examTimerInterval); const el = document.getElementById('examTimer'); examTimerInterval = setInterval(() => { seconds--; el.innerText = `${Math.floor(seconds/60).toString().padStart(2,'0')}:${(seconds%60).toString().padStart(2,'0')}`; if(seconds <= 0) { clearInterval(examTimerInterval); alert('انتهى الوقت! سيتم تسليم إجاباتك تلقائياً.'); submitExam(); } }, 1000); }
 
     async function submitExam() {
-        clearInterval(examTimerInterval); let score = 0; let totalAutoGraded = 0; 
-        let studentSavedAnswers = []; 
-        
+        clearInterval(examTimerInterval); let score = 0; let totalAutoGraded = 0; let studentSavedAnswers = []; 
         currentExam.questions.forEach((q, i) => {
             let studentAnsText = "لم تتم الإجابة"; let isCorrect = false; let correctAnsText = "";
             if(q.type === 'mcq') { totalAutoGraded++; const sel = document.querySelector(`input[name="ex-q-${i}"]:checked`); correctAnsText = q.options[q.correctOption]; if(sel) { studentAnsText = q.options[parseInt(sel.value)]; if(parseInt(sel.value) === q.correctOption) isCorrect = true; } } 
-            else if(q.type === 'rewrite' || q.type === 'text') { totalAutoGraded++; const ansInput = document.getElementById(`ex-q-${i}`).value.trim(); if(ansInput) studentAnsText = ansInput; correctAnsText = q.correctText; const ansNorm = ansInput.toLowerCase().replace(/\s+/g, ' ').trim(); const corrNorm = correctAnsText.toLowerCase().replace(/\s+/g, ' ').trim(); if(ansNorm === corrNorm && studentAnsText !== "لم تتم الإجابة") isCorrect = true; } 
+            else if(q.type === 'rewrite' || q.type === 'text') { totalAutoGraded++; const ansInput = document.getElementById(`ex-q-${i}`).value.trim(); if(ansInput) studentAnsText = ansInput; correctAnsText = q.correctText; const ansNorm = studentAnsText.toLowerCase().replace(/\s+/g, ' ').trim(); const corrNorm = correctAnsText.toLowerCase().replace(/\s+/g, ' ').trim(); if(ansNorm === corrNorm && studentAnsText !== "لم تتم الإجابة") isCorrect = true; } 
             else { const ansInput = document.getElementById(`ex-q-${i}`).value.trim(); if(ansInput) studentAnsText = ansInput; correctAnsText = "مراجعة المستر"; isCorrect = null; }
-            if (isCorrect === true) { score++; }
-            studentSavedAnswers.push(studentAnsText); 
+            if (isCorrect === true) { score++; } studentSavedAnswers.push(studentAnsText); 
         });
 
-        const oldAttempts = await db.collection('exam_results').where('examId','==',currentExam.id).where('username','==',currentUserName).get();
-        const isFirstAttempt = oldAttempts.empty;
-
+        const oldAttempts = await db.collection('exam_results').where('examId','==',currentExam.id).where('username','==',currentUserName).get(); const isFirstAttempt = oldAttempts.empty;
         const newResultRef = await db.collection('exam_results').add({ examId: currentExam.id, username: currentUserName, score, totalAutoGraded, answers: studentSavedAnswers, submittedAt: firebase.firestore.FieldValue.serverTimestamp() });
-        
         if (isFirstAttempt && !currentUserIsAdmin) { const userRef = await db.collection('users').where('username','==',currentUserName).get(); if(!userRef.empty) await db.collection('users').doc(userRef.docs[0].id).update({score: firebase.firestore.FieldValue.increment(score)}); }
         document.getElementById('liveExamModal').style.display = 'none'; renderSpecificResult(currentExam.id, newResultRef.id, currentUserName); currentExam = null;
     }
 
     async function showAttempts(exId) {
-        const snap = await db.collection('exam_results').where('examId','==',exId).where('username','==',currentUserName).get();
-        if(snap.empty) return;
-        let allRes = []; snap.forEach(doc => allRes.push({ id: doc.id, ...doc.data() }));
-        allRes.sort((a,b) => { let ta = a.submittedAt ? a.submittedAt.toMillis() : 0; let tb = b.submittedAt ? b.submittedAt.toMillis() : 0; return ta - tb; });
-
+        const snap = await db.collection('exam_results').where('examId','==',exId).where('username','==',currentUserName).get(); if(snap.empty) return;
+        let allRes = []; snap.forEach(doc => allRes.push({ id: doc.id, ...doc.data() })); allRes.sort((a,b) => { let ta = a.submittedAt ? a.submittedAt.toMillis() : 0; let tb = b.submittedAt ? b.submittedAt.toMillis() : 0; return ta - tb; });
         if(allRes.length === 1) { renderSpecificResult(exId, allRes[0].id, currentUserName); } 
         else {
             const cont = document.getElementById('attemptsContainer'); cont.innerHTML = '';
-            allRes.forEach((res, idx) => {
-                let dStr = res.submittedAt ? new Date(res.submittedAt.toMillis()).toLocaleString('ar-EG', {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : '';
-                cont.insertAdjacentHTML('beforeend', `<button class="btn-view" style="text-align:right; font-size:16px; display:flex; flex-direction:column; background:var(--card-bg);" onclick="closeModal('attemptsModal'); renderSpecificResult('${exId}', '${res.id}', '${currentUserName}')"><strong style="color:var(--primary); font-size:18px;">المحاولة ${idx + 1} </strong> <span style="font-size:14px; color:#888; margin-top:5px;">التاريخ: ${dStr} | النتيجة: ${res.score}/${res.totalAutoGraded}</span></button>`);
-            });
+            allRes.forEach((res, idx) => { let dStr = res.submittedAt ? new Date(res.submittedAt.toMillis()).toLocaleString('ar-EG', {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : ''; cont.insertAdjacentHTML('beforeend', `<button class="btn-view" style="text-align:right; font-size:16px; display:flex; flex-direction:column; background:var(--card-bg);" onclick="closeModal('attemptsModal'); renderSpecificResult('${exId}', '${res.id}', '${currentUserName}')"><strong style="color:var(--primary); font-size:18px;">المحاولة ${idx + 1} </strong> <span style="font-size:14px; color:#888; margin-top:5px;">التاريخ: ${dStr} | النتيجة: ${res.score}/${res.totalAutoGraded}</span></button>`); });
             document.getElementById('attemptsModal').style.display = 'flex';
         }
     }
 
     async function renderSpecificResult(exId, resultId, studentName) {
-        document.getElementById('resultContent').innerHTML = '<div style="text-align:center; padding:20px; font-weight:bold;">جاري سحب التصحيح... ⏳</div>';
-        document.getElementById('resultModal').style.display = 'block';
-
-        const examDoc = await db.collection('exams').doc(exId).get(); if(!examDoc.exists) return; const exam = examDoc.data();
-        const resDoc = await db.collection('exam_results').doc(resultId).get(); if(!resDoc.exists) return; const result = resDoc.data();
-
+        document.getElementById('resultContent').innerHTML = '<div style="text-align:center; padding:20px; font-weight:bold;">جاري سحب التصحيح... ⏳</div>'; document.getElementById('resultModal').style.display = 'block';
+        const examDoc = await db.collection('exams').doc(exId).get(); if(!examDoc.exists) return; const exam = examDoc.data(); const resDoc = await db.collection('exam_results').doc(resultId).get(); if(!resDoc.exists) return; const result = resDoc.data();
         let resultHtml = '';
         exam.questions.forEach((q, i) => {
-            let studentAnsText = (result.answers && result.answers[i]) ? result.answers[i] : "لم تتم الإجابة"; 
-            let isCorrect = false; let correctAnsText = "";
+            let studentAnsText = (result.answers && result.answers[i]) ? result.answers[i] : "لم تتم الإجابة"; let isCorrect = false; let correctAnsText = "";
             if(q.type === 'mcq') { correctAnsText = q.options[q.correctOption]; if(studentAnsText === correctAnsText) isCorrect = true; } 
             else if(q.type === 'rewrite' || q.type === 'text') { correctAnsText = q.correctText; const ansNorm = studentAnsText.toLowerCase().replace(/\s+/g, ' ').trim(); const corrNorm = correctAnsText.toLowerCase().replace(/\s+/g, ' ').trim(); if(ansNorm === corrNorm && studentAnsText !== "لم تتم الإجابة") isCorrect = true; } 
             else { correctAnsText = "مراجعة المستر"; isCorrect = null; }
-            
             let qTitleDisplay = `${i+1}- ${q.text} ${q.bracketWord ? `<span style="color:var(--secondary);">(${q.bracketWord})</span>` : ''}`;
             if (isCorrect === true) { resultHtml += `<div class="post-card" style="padding:15px; border:2px solid #10b981;"><h4 style="margin-bottom:10px;">${qTitleDisplay}</h4><div style="color:#10b981; font-weight:bold;">✅ إجابتك صحيحة: ${studentAnsText}</div></div>`; } 
             else if (isCorrect === false) { resultHtml += `<div class="post-card" style="padding:15px; border:2px solid #ef4444;"><h4 style="margin-bottom:10px;">${qTitleDisplay}</h4><div style="color:#ef4444; font-weight:bold; margin-bottom:8px;">❌ إجابتك: ${studentAnsText}</div><div style="color:#10b981; font-weight:bold; background:rgba(16,185,129,0.1); padding:8px; border-radius:8px;">✅ الإجابة الصحيحة: ${correctAnsText}</div></div>`; } 
             else { resultHtml += `<div class="post-card" style="padding:15px; border:2px solid var(--blue-strip);"><h4 style="margin-bottom:10px;">${qTitleDisplay}</h4><div style="font-weight:bold; margin-bottom:8px;">📝 إجابتك: ${studentAnsText}</div><div style="color:var(--blue-strip); font-weight:bold;">سيتم التقييم من المعلم</div></div>`; }
         });
-
         const headerTitle = studentName === currentUserName ? 'درجتك التلقائية' : `درجة الطالب: ${studentName}`;
         document.getElementById('resultContent').innerHTML = `<div style="text-align:center; margin-bottom:30px; background:var(--card-bg); padding:20px; border-radius:15px; box-shadow:0 4px 10px rgba(0,0,0,0.1);"><h2 style="color:var(--primary); font-weight:900; font-size:24px; margin-bottom:10px;">${headerTitle}</h2><div style="font-size:35px; font-weight:900; color:#10b981;">${result.score} <span style="font-size:20px;">من ${result.totalAutoGraded}</span></div></div>${resultHtml}<button class="btn-primary" style="margin-top:20px;" onclick="closeModal('resultModal');">العودة 🔙</button>`;
     }
 
-    // --- النشر والإشعارات الحية ---
     async function publishNews() { const text=document.getElementById('newsText').value; if(text){ await db.collection('news').add({text, createdAt:firebase.firestore.FieldValue.serverTimestamp()}); document.getElementById('newsText').value=''; alert('تم النشر'); } }
     function loadNews() { 
         db.collection('news').orderBy('createdAt','desc').onSnapshot(snap=>{ 
@@ -708,7 +663,6 @@
             snap.docChanges().forEach(change => { if (change.type === "added" && !currentUserIsAdmin) { const data = change.doc.data(); if (data.createdAt && (Date.now() - data.createdAt.toMillis() < 10000)) { sendNotification("خبر عاجل 🔴", data.text); } } });
         }); 
     }
-    
     async function publishQuiz() { const q=document.getElementById('quizQ').value; const a=document.getElementById('quizA').value; if(q&&a){ await db.collection('quizzes').add({question:q, answer:a, createdAt:firebase.firestore.FieldValue.serverTimestamp()}); document.getElementById('quizQ').value=''; document.getElementById('quizA').value=''; alert('تم'); } }
     function loadQuizzes() { 
         db.collection('quizzes').orderBy('createdAt','desc').onSnapshot(snap=>{ 
@@ -718,9 +672,7 @@
         }); 
     }
     async function submitAns(id, correct) { const ans=document.getElementById(`ans-${id}`).value.trim(); if(!ans) return; answeredQuizzes.push(id); localStorage.setItem('answeredQuizzes', JSON.stringify(answeredQuizzes)); if(ans.toLowerCase()===correct.trim().toLowerCase()){ alert('صح! كسبت نقطة'); const ur=await db.collection('users').where('username','==',currentUserName).get(); if(!ur.empty) await db.collection('users').doc(ur.docs[0].id).update({score:firebase.firestore.FieldValue.increment(1)}); } else alert('خطأ! الإجابة هي: '+correct); loadQuizzes(); }
-    
     function openLeaderboard() { db.collection('users').orderBy('score','desc').limit(10).get().then(snap=>{ const list=document.getElementById('leaderboardList'); list.innerHTML=''; let r=1; snap.forEach(d=>{ const u=d.data(); if(u.username==='Admin' || u.username === 'Admrtaha' || u.score===0) return; let m=r===1?'🥇':r===2?'🥈':r===3?'🥉':'🎖️'; list.insertAdjacentHTML('beforeend',`<div style="display:flex; justify-content:space-between; padding:15px; border-bottom:1px solid var(--border-color); font-weight:bold;"><span>${m} ${u.username}</span><span style="color:var(--accent);">${u.score} نقطة</span></div>`); r++; }); if(list.innerHTML==='') list.innerHTML='<div class="empty-state">لا نقاط حتى الآن</div>'; document.getElementById('leaderboardModal').style.display='flex'; }); }
-
     async function publishPost() { const d=document.getElementById('customPostDate').value; const t=document.getElementById('postTasmee3').value; const h=document.getElementById('postHal').value; if(d){ await db.collection('posts').add({dateText:d, tasmee3:t, hal:h, createdAt:firebase.firestore.FieldValue.serverTimestamp()}); document.getElementById('customPostDate').value=''; document.getElementById('postTasmee3').value=''; document.getElementById('postHal').value=''; alert('تم'); } }
     function loadPosts() { 
         db.collection('posts').orderBy('createdAt','desc').onSnapshot(snap=>{ 
@@ -729,8 +681,6 @@
             snap.docChanges().forEach(change => { if (change.type === "added" && !currentUserIsAdmin) { const data = change.doc.data(); if (data.createdAt && (Date.now() - data.createdAt.toMillis() < 10000)) { sendNotification("واجب جديد 📝", `تم إضافة واجب: ${data.dateText}`); } } });
         }); 
     }
-
-    // --- السبورة (الصور) ---
     function handleImageSelect(e) { const f=e.target.files[0]; if(f) { const r=new FileReader(); r.readAsDataURL(f); r.onload=ev=>{ const img=new Image(); img.src=ev.target.result; img.onload=()=>{ const cv=document.createElement('canvas'); const ctx=cv.getContext('2d'); cv.width=img.width>1600?1600:img.width; cv.height=img.height*(cv.width/img.width); ctx.drawImage(img,0,0,cv.width,cv.height); base64ImageToUpload=cv.toDataURL('image/jpeg',0.85); document.getElementById('previewImage').src=base64ImageToUpload; document.getElementById('boardPreviewCard').style.display='block'; document.getElementById('boardPreviewCard').scrollIntoView(); }}}}
     function cancelBoardUpload() { base64ImageToUpload=""; document.getElementById('boardPreviewCard').style.display='none'; }
     async function confirmBoardUpload() { const d=document.getElementById('boardCustomDate').value; if(d&&base64ImageToUpload){ await db.collection('board_requests').add({uploaderName:currentUserName, dateText:d, image:base64ImageToUpload, status:currentUserIsAdmin?'accepted':'pending', createdAt:firebase.firestore.FieldValue.serverTimestamp()}); cancelBoardUpload(); alert(currentUserIsAdmin?'تم!':'قيد المراجعة.'); } }
@@ -742,15 +692,12 @@
         }); 
     }
 
-    // --- إدارة الحسابات والاستثناءات ---
     function loadAllAccounts() { 
         db.collection('users').orderBy('createdAt','desc').onSnapshot(snap=>{ 
             const c=document.getElementById('accountsContainer'); c.innerHTML=''; 
             snap.forEach(doc=>{ 
                 const u=doc.data(); if(u.username==='Admin' || u.username === 'Admrtaha') return; 
-                const isBan=u.status==='banned'; 
-                const bBtn=isBan?`<button class="btn-accept" style="flex:1; padding:8px;" onclick="updateDocStatus('users','${doc.id}','accepted')">فك الحظر</button>`:`<button class="btn-reject" style="flex:1; padding:8px;" onclick="document.getElementById('banUserId').value='${doc.id}'; document.getElementById('banModal').style.display='flex';">حظر</button>`; 
-                const examsBtn = `<button class="btn-primary" style="flex:1; background:#3b82f6; padding:8px;" onclick="manageUserExams('${doc.id}', '${u.username}')">الامتحانات</button>`;
+                const isBan=u.status==='banned'; const bBtn=isBan?`<button class="btn-accept" style="flex:1; padding:8px;" onclick="updateDocStatus('users','${doc.id}','accepted')">فك الحظر</button>`:`<button class="btn-reject" style="flex:1; padding:8px;" onclick="document.getElementById('banUserId').value='${doc.id}'; document.getElementById('banModal').style.display='flex';">حظر</button>`; const examsBtn = `<button class="btn-primary" style="flex:1; background:#3b82f6; padding:8px;" onclick="manageUserExams('${doc.id}', '${u.username}')">الامتحانات</button>`;
                 c.insertAdjacentHTML('beforeend',`<div class="post-card" style="padding:15px;"><div style="font-size:18px; font-weight:bold; color:var(--primary); margin-bottom:10px;">${u.username} ${isBan?'🚫':''}</div><div style="background:var(--input-bg); padding:8px; border-radius:8px; font-family:monospace; margin-bottom:10px;">🔑 ${u.password}</div><div style="font-size:14px; margin-bottom:10px;">النقاط: ${u.score||0} | الحالة: ${u.status==='pending'?'انتظار':u.status==='accepted'?'مقبول':'محظور'}</div><div class="action-btns" style="gap:5px;">${bBtn}${examsBtn}<button class="btn-reject" style="flex:1; background:#475569; padding:8px;" onclick="deleteDocument('users','${doc.id}')">إزالة</button></div></div>`); 
             }); 
         }); 
@@ -761,9 +708,7 @@
         const userDoc = await db.collection('users').doc(userId).get(); const customRetakes = userDoc.data().customRetakes || {};
         db.collection('exams').orderBy('createdAt', 'desc').get().then(snap => {
             list.innerHTML = ''; if(snap.empty) { list.innerHTML = '<div class="empty-state">لا توجد امتحانات</div>'; return; }
-            snap.forEach(doc => {
-                const ex = doc.data(); const exId = doc.id; let canRetake = ex.allowRetake || false;
-                if (customRetakes[exId] !== undefined) canRetake = customRetakes[exId]; 
+            snap.forEach(doc => { const ex = doc.data(); const exId = doc.id; let canRetake = ex.allowRetake || false; if (customRetakes[exId] !== undefined) canRetake = customRetakes[exId]; 
                 list.insertAdjacentHTML('beforeend', `<div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid var(--border-color);"><div style="font-weight:bold; color:var(--text-dark);">${ex.title}</div><label style="display:flex; align-items:center; cursor:pointer;"><span style="font-size:12px; color:#666; margin-left:8px;">إعادة</span><input type="checkbox" style="width:20px; height:20px;" ${canRetake ? 'checked' : ''} onchange="toggleUserRetake('${userId}', '${exId}', this.checked)"></label></div>`);
             });
         });
@@ -772,7 +717,6 @@
     async function confirmBan() { const id=document.getElementById('banUserId').value; const t=document.getElementById('banType').value; let d=null; if(t==='temp'){ const days=parseInt(document.getElementById('banDays').value); if(!days)return; d=Date.now()+(days*86400000); } await db.collection('users').doc(id).update({status:'banned', banUntil:d}); closeModal('banModal'); }
     function loadBoardRequests() { db.collection('board_requests').where('status','==','pending').onSnapshot(snap=>{ const c=document.getElementById('boardRequestsContainer'); c.innerHTML=''; snap.forEach(doc=>{ const d=doc.data(); c.insertAdjacentHTML('beforeend',`<div class="post-card" style="border:2px solid var(--accent);"><div class="board-header"><span>من: ${d.uploaderName}</span></div><img src="${d.image}" class="board-img"><div class="action-btns" style="padding:15px;"><button class="btn-accept" onclick="updateDocStatus('board_requests','${doc.id}','accepted')">قبول</button><button class="btn-reject" onclick="deleteDocument('board_requests','${doc.id}',false)">رفض</button></div></div>`); }); }); }
     function loadRequests() { db.collection('users').where('status','==','pending').onSnapshot(snap=>{ const c=document.getElementById('requestsContainer'); c.innerHTML=''; snap.forEach(doc=>{ c.insertAdjacentHTML('beforeend',`<div class="post-box" style="margin-top:10px;"><strong>${doc.data().username}</strong><div class="action-btns"><button class="btn-accept" onclick="updateDocStatus('users','${doc.id}','accepted')">قبول</button><button class="btn-reject" onclick="deleteDocument('users','${doc.id}',false)">رفض</button></div></div>`); }); }); }
-
     async function updateDocStatus(col,id,status) { try{ await db.collection(col).doc(id).update({status, banUntil:null}); }catch(e){} }
     async function deleteDocument(col,id,ask=true) { if(ask&&!confirm('مسح نهائي؟'))return; try{ await db.collection(col).doc(id).delete(); }catch(e){} }
 </script>
