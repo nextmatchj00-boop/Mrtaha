@@ -51,7 +51,6 @@
         @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* Header */
         .main-header { background: linear-gradient(135deg, var(--header-bg1), var(--header-bg2)); padding: 20px 20px 25px; display: flex; align-items: center; justify-content: space-between; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.2); border-bottom-left-radius: 25px; border-bottom-right-radius: 25px; z-index: 10; position: relative; transition: background 0.3s; }
         .header-right { display: flex; align-items: center; gap: 10px; }
         .user-avatar { width: 45px; height: 45px; background: rgba(255,255,255,0.25); border: 2px solid #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; }
@@ -67,7 +66,6 @@
         .menu-item:last-child { border-bottom: none; }
         .menu-item.logout { color: #dc3545; }
 
-        /* Forms & Cards */
         .form-container { padding: 40px 25px; justify-content: center; background: var(--bg-color); }
         .logo-placeholder { font-size: 60px; text-align: center; margin-bottom: 10px; }
         h2 { text-align: center; color: var(--primary); margin-bottom: 30px; font-weight: 900; font-size: 24px; }
@@ -264,16 +262,20 @@
 
     <div id="adminPage" class="page">
         <div class="page-content">
+            
+            <div class="admin-section" style="border: 2px solid #fdbb2d; background: rgba(253, 187, 45, 0.05);">
+                <h4 style="color:#fdbb2d; border-bottom: 2px solid rgba(253, 187, 45, 0.2);">🔔 اختبار الإشعارات</h4>
+                <p style="font-size:14px; font-weight:bold; color:#666; margin-bottom:15px;">اضغط هنا لتجربة وصول الإشعارات على هاتفك.</p>
+                <button class="btn-primary" style="background:linear-gradient(135deg, #fdbb2d, #ff9900);" onclick="sendNotification('تجربة الإشعارات ✉️', 'الإشعارات شغالة 100% يا هندسة! 🚀')">إرسال إشعار تجريبي ✉️</button>
+            </div>
+
             <div class="admin-section" style="border: 2px solid var(--blue-strip);">
                 <h4>⏱️ إنشاء امتحان إلكتروني</h4>
                 <input type="text" id="examTitle" placeholder="عنوان الامتحان" style="margin-bottom:10px;">
                 <input type="number" id="examTime" placeholder="وقت الامتحان بالدقائق" style="margin-bottom:15px;">
-                
                 <label style="display:flex; align-items:center; margin-bottom:15px; cursor:pointer; color:var(--text-dark); font-weight:bold; background:var(--input-bg); padding:10px; border-radius:8px;">
-                    <input type="checkbox" id="examAllowRetake" style="width:20px; height:20px; margin-left:10px;">
-                    السماح بإعادة الامتحان للطلاب
+                    <input type="checkbox" id="examAllowRetake" style="width:20px; height:20px; margin-left:10px;">السماح بإعادة الامتحان للطلاب
                 </label>
-
                 <div id="questionsBuilderContainer"></div>
                 <button class="btn-accept" style="width:100%; margin-bottom:15px; background: #475569;" onclick="addQuestionField()">➕ إضافة سؤال للامتحان</button>
                 <button class="btn-primary" onclick="saveExam()">نشر الامتحان للطلبة فوراً 🚀</button>
@@ -284,7 +286,6 @@
             <div class="admin-section"><h4>📝 نشر واجب</h4><input type="text" id="customPostDate" placeholder="التاريخ"><textarea id="postTasmee3" placeholder="تسميع..." style="margin-top:10px;"></textarea><textarea id="postHal" placeholder="حل..." style="margin-top:10px;"></textarea><button class="btn-primary" style="margin-top:10px;" onclick="publishPost()">نشر</button></div>
             <div class="admin-section"><h4>🖼️ طلبات السبورة</h4><div id="boardRequestsContainer"></div></div>
             <div class="admin-section"><h4>👥 الحسابات المعلقة</h4><div id="requestsContainer"></div></div>
-            
             <button class="btn-primary" style="width:100%; background:#10b981; margin-top:10px; padding:15px; font-size:18px; border-radius:15px; box-shadow: 0 5px 15px rgba(16,185,129,0.3);" onclick="openAdminExamsResults()">الاطلاع على من حل الامتحانات 📋</button>
         </div>
     </div>
@@ -357,6 +358,22 @@
     let examTimerInterval = null; 
     let examQuestionCount = 0;
 
+    // --- نظام الإشعارات (جديد) 🔔 ---
+    function requestNotificationPermission() {
+        if ("Notification" in window) {
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") console.log("تم تفعيل الإشعارات");
+            });
+        }
+    }
+
+    function sendNotification(title, body) {
+        if ("Notification" in window && Notification.permission === "granted") {
+            new Notification(title, { body: body, icon: 'logo.png' });
+        }
+    }
+
+    // --- الوضع الليلي وتحديث الشعلة ---
     function toggleDarkMode() {
         document.body.classList.toggle('dark-mode');
         const isDark = document.body.classList.contains('dark-mode');
@@ -379,22 +396,16 @@
     }
 
     window.onload = function() {
+        requestNotificationPermission(); // طلب الإذن بالإشعارات أول ما الموقع يفتح
         if(localStorage.getItem('darkMode') === 'true') { document.body.classList.add('dark-mode'); document.getElementById('darkModeBtn').innerText = '☀️'; }
         const savedUser = localStorage.getItem('loggedInUser'); const savedIsAdmin = localStorage.getItem('isAdmin') === 'true';
         if (savedUser) {
             currentUserName = savedUser; currentUserIsAdmin = savedIsAdmin;
             document.getElementById('displayUserName').innerText = currentUserName;
             if (currentUserIsAdmin) { 
-                document.getElementById('adminLink').style.display = 'flex'; 
-                document.getElementById('adminAccountsLink').style.display = 'flex'; 
-                document.getElementById('adminAnalyticsLink').style.display = 'flex'; 
-                document.getElementById('studentStatsLink').style.display = 'none'; 
-                loadAdminData(); 
+                document.getElementById('adminLink').style.display = 'flex'; document.getElementById('adminAccountsLink').style.display = 'flex'; document.getElementById('adminAnalyticsLink').style.display = 'flex'; document.getElementById('studentStatsLink').style.display = 'none'; loadAdminData(); 
             } else {
-                document.getElementById('adminLink').style.display = 'none'; 
-                document.getElementById('adminAccountsLink').style.display = 'none'; 
-                document.getElementById('adminAnalyticsLink').style.display = 'none'; 
-                document.getElementById('studentStatsLink').style.display = 'flex'; 
+                document.getElementById('adminLink').style.display = 'none'; document.getElementById('adminAccountsLink').style.display = 'none'; document.getElementById('adminAnalyticsLink').style.display = 'none'; document.getElementById('studentStatsLink').style.display = 'flex'; 
                 db.collection('users').where('username','==',currentUserName).get().then(snap => { if(!snap.empty) updateDailyStreak(snap.docs[0].id, snap.docs[0].data()); });
             }
             switchPage('mainPage'); loadPublicData();
@@ -426,7 +437,7 @@
             localStorage.setItem('loggedInUser', currentUserName); localStorage.setItem('isAdmin', 'true');
             document.getElementById('adminLink').style.display='flex'; document.getElementById('adminAccountsLink').style.display='flex'; document.getElementById('adminAnalyticsLink').style.display='flex'; document.getElementById('studentStatsLink').style.display='none';
             document.getElementById('displayUserName').innerText=currentUserName; document.getElementById('userStreak').innerText='';
-            switchPage('mainPage'); loadPublicData(); loadAdminData(); return;
+            requestNotificationPermission(); switchPage('mainPage'); loadPublicData(); loadAdminData(); return;
         }
         try {
             const snap = await db.collection('users').where('username','==',user).where('password','==',pass).get();
@@ -438,7 +449,7 @@
             localStorage.setItem('loggedInUser', currentUserName); localStorage.setItem('isAdmin', 'false');
             document.getElementById('adminLink').style.display='none'; document.getElementById('adminAccountsLink').style.display='none'; document.getElementById('adminAnalyticsLink').style.display='none'; document.getElementById('studentStatsLink').style.display='flex';
             document.getElementById('displayUserName').innerText = currentUserName;
-            updateDailyStreak(uId, uData); switchPage('mainPage'); loadPublicData();
+            requestNotificationPermission(); updateDailyStreak(uId, uData); switchPage('mainPage'); loadPublicData();
         } catch (err) { alert("حدث خطأ."); }
     }
 
@@ -459,21 +470,16 @@
             const userSnap = await db.collection('users').where('username', '==', currentUserName).get();
             if(userSnap.empty) return;
             const userData = userSnap.docs[0].data();
-            
             const examsSnap = await db.collection('exam_results').where('username', '==', currentUserName).get();
             let uniqueExams = new Set(); examsSnap.forEach(doc => uniqueExams.add(doc.data().examId));
             const examsCount = uniqueExams.size;
-            
             const totalScore = userData.score || 0; const streakCount = userData.streak || 0; const quizzesCount = answeredQuizzes.length;
-
             document.getElementById('myTotalScore').innerText = totalScore; document.getElementById('myExamsCount').innerText = examsCount;
             document.getElementById('myQuizzesCount').innerText = quizzesCount; document.getElementById('myStreakCount').innerText = streakCount;
 
             let rawRating = (totalScore * 0.2) + (examsCount * 0.5) + (quizzesCount * 0.1) + 1;
             let finalRating = Math.min(10, rawRating).toFixed(1);
-            
-            document.getElementById('studentRatingNum').innerText = finalRating;
-            document.getElementById('studentRatingCircle').style.setProperty('--rating-percent', `${(finalRating / 10) * 100}%`);
+            document.getElementById('studentRatingNum').innerText = finalRating; document.getElementById('studentRatingCircle').style.setProperty('--rating-percent', `${(finalRating / 10) * 100}%`);
 
             const msgEl = document.getElementById('studentMotivationalMsg');
             if(finalRating >= 9) { msgEl.innerText = "أسطورة الدفعة! استمر يا بطل 🥇"; msgEl.style.color = "#10b981"; }
@@ -512,13 +518,11 @@
         } catch(e) { list.innerHTML = '<div class="empty-state" style="color:#ff4757;">حدث خطأ ❌</div>'; }
     }
 
-
     // ==========================================
     // 📋 قسم متابعة نتائج الامتحانات (للأدمن) 📋
     // ==========================================
     function openAdminExamsResults() {
-        switchPage('adminExamsResultsPage');
-        document.getElementById('adminExamsList').style.display = 'block'; document.getElementById('adminStudentsList').style.display = 'none';
+        switchPage('adminExamsResultsPage'); document.getElementById('adminExamsList').style.display = 'block'; document.getElementById('adminStudentsList').style.display = 'none';
         db.collection('exams').orderBy('createdAt', 'desc').get().then(snap => {
             const cont = document.getElementById('adminExamsList'); cont.innerHTML = '';
             if(snap.empty) { cont.innerHTML = '<div class="empty-state">لا توجد امتحانات لعرضها</div>'; return; }
@@ -528,19 +532,15 @@
             });
         });
     }
-
     function backToAdminExams() { document.getElementById('adminExamsList').style.display = 'block'; document.getElementById('adminStudentsList').style.display = 'none'; }
-
     async function viewExamTakers(exId, exTitle) {
         document.getElementById('adminExamsList').style.display = 'none'; document.getElementById('adminStudentsList').style.display = 'block';
         const cont = document.getElementById('adminStudentsContainer'); cont.innerHTML = '<div style="text-align:center; padding:20px; font-weight:bold; font-size:18px;">جاري سحب بيانات الطلبة... ⏳</div>';
-        const snap = await db.collection('exam_results').where('examId','==',exId).get();
-        cont.innerHTML = `<h3 style="color:var(--secondary); text-align:center; margin-bottom:20px;">امتحان: ${exTitle}</h3>`;
+        const snap = await db.collection('exam_results').where('examId','==',exId).get(); cont.innerHTML = `<h3 style="color:var(--secondary); text-align:center; margin-bottom:20px;">امتحان: ${exTitle}</h3>`;
         if(snap.empty) { cont.innerHTML += '<div class="empty-state">لم يقم أحد بحل هذا الامتحان بعد 🤷‍♂️</div>'; return; }
         
         let allRes = []; snap.forEach(doc => allRes.push({ id: doc.id, ...doc.data() }));
         allRes.sort((a,b) => { let ta = a.submittedAt ? a.submittedAt.toMillis() : 0; let tb = b.submittedAt ? b.submittedAt.toMillis() : 0; return ta - tb; });
-
         let attemptsByStudent = {};
         allRes.forEach(d => { if(!attemptsByStudent[d.username]) attemptsByStudent[d.username] = []; attemptsByStudent[d.username].push(d); });
         
@@ -554,8 +554,7 @@
         }
     }
 
-
-    // --- الامتحانات الإلكترونية (بالمحاولات والتحكم الخاص) ---
+    // --- الامتحانات الإلكترونية ---
     function addQuestionField() {
         examQuestionCount++;
         const html = `<div class="exam-q-block" id="examQBox-${examQuestionCount}"><div style="display:flex; justify-content:space-between; margin-bottom:10px;"><strong style="color:var(--text-dark);">السؤال رقم ${examQuestionCount}</strong><button class="delete-btn" style="padding:2px 8px; width:auto;" onclick="document.getElementById('examQBox-${examQuestionCount}').remove()">حذف</button></div><select class="q-type" style="margin-bottom:10px;" onchange="toggleExamQType(${examQuestionCount}, this.value)"><option value="mcq">اختياري (MCQ)</option><option value="rewrite">سؤال أعد الكتابة (Rewrite)</option><option value="text">أكمل الفراغ (إجابة قصيرة)</option><option value="para">برجراف / مقال (بدون تصحيح تلقائي)</option></select><textarea class="q-text" placeholder="رأس السؤال / الجملة..." style="margin-bottom:10px; min-height:60px;"></textarea><div id="mcqOpts-${examQuestionCount}"><input type="text" class="opt-1" placeholder="الاختيار الأول" style="margin-bottom:5px;"><input type="text" class="opt-2" placeholder="الاختيار الثاني" style="margin-bottom:5px;"><input type="text" class="opt-3" placeholder="الاختيار الثالث" style="margin-bottom:5px;"><input type="text" class="opt-4" placeholder="الاختيار الرابع" style="margin-bottom:10px;"><select class="mcq-correct"><option value="1">الإجابة الصحيحة: الأول</option><option value="2">الإجابة الصحيحة: الثاني</option><option value="3">الإجابة الصحيحة: الثالث</option><option value="4">الإجابة الصحيحة: الرابع</option></select></div><div id="rewriteOpts-${examQuestionCount}" style="display:none;"><input type="text" class="rewrite-bracket" placeholder="الكلمة بين الأقواس" style="margin-bottom:10px; border: 2px solid var(--red-strip);"><input type="text" class="rewrite-correct" placeholder="الجملة الصحيحة (للتصحيح)"></div><div id="textOpts-${examQuestionCount}" style="display:none;"><input type="text" class="text-correct" placeholder="الكلمة الصحيحة (للتصحيح)"></div></div>`;
@@ -564,11 +563,8 @@
     function toggleExamQType(id, type) { document.getElementById(`mcqOpts-${id}`).style.display=(type==='mcq')?'block':'none'; document.getElementById(`rewriteOpts-${id}`).style.display=(type==='rewrite')?'block':'none'; document.getElementById(`textOpts-${id}`).style.display=(type==='text')?'block':'none'; }
 
     async function saveExam() {
-        const title = document.getElementById('examTitle').value; const timeLimit = parseInt(document.getElementById('examTime').value);
-        const allowRetake = document.getElementById('examAllowRetake').checked;
-        if(!title || !timeLimit) return alert('أدخل العنوان والوقت');
-        const qBlocks = document.querySelectorAll('.exam-q-block'); if(qBlocks.length === 0) return alert('أضف سؤالاً');
-
+        const title = document.getElementById('examTitle').value; const timeLimit = parseInt(document.getElementById('examTime').value); const allowRetake = document.getElementById('examAllowRetake').checked;
+        if(!title || !timeLimit) return alert('أدخل العنوان والوقت'); const qBlocks = document.querySelectorAll('.exam-q-block'); if(qBlocks.length === 0) return alert('أضف سؤالاً');
         let questions = []; let isValid = true;
         qBlocks.forEach(block => {
             const type = block.querySelector('.q-type').value; const text = block.querySelector('.q-text').value.trim(); if(!text) isValid = false;
@@ -578,12 +574,8 @@
             else if(type === 'text') { q.correctText = block.querySelector('.text-correct').value.trim(); if(!q.correctText) isValid = false; }
             questions.push(q);
         });
-
         if(!isValid) return alert('يرجى ملء جميع الحقول للأسئلة.');
-        try { 
-            await db.collection('exams').add({ title, timeLimit, allowRetake, questions, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); 
-            document.getElementById('examTitle').value=''; document.getElementById('examTime').value=''; document.getElementById('questionsBuilderContainer').innerHTML=''; document.getElementById('examAllowRetake').checked = false; examQuestionCount=0; alert('تم النشر بنجاح! 🚀'); 
-        } catch (error) { alert('حدث خطأ.'); }
+        try { await db.collection('exams').add({ title, timeLimit, allowRetake, questions, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); document.getElementById('examTitle').value=''; document.getElementById('examTime').value=''; document.getElementById('questionsBuilderContainer').innerHTML=''; document.getElementById('examAllowRetake').checked = false; examQuestionCount=0; alert('تم النشر بنجاح! 🚀'); } catch (error) { alert('حدث خطأ.'); }
     }
 
     function loadExams() {
@@ -595,32 +587,31 @@
             let submittedIds = resSnap.docs.map(d => d.data().examId);
             
             let customRetakes = {};
-            if (!currentUserIsAdmin) {
-                const uSnap = await db.collection('users').where('username','==',currentUserName).get();
-                if (!uSnap.empty) { customRetakes = uSnap.docs[0].data().customRetakes || {}; }
-            }
+            if (!currentUserIsAdmin) { const uSnap = await db.collection('users').where('username','==',currentUserName).get(); if (!uSnap.empty) { customRetakes = uSnap.docs[0].data().customRetakes || {}; } }
 
-            let examsArray = []; snap.forEach(doc => { const d = doc.data(); examsArray.push({id: doc.id, ...d}); markAsSeen('exams', doc.id, d.seenBy); });
+            let examsArray = []; 
+            snap.forEach(doc => { const d = doc.data(); examsArray.push({id: doc.id, ...d}); markAsSeen('exams', doc.id, d.seenBy); });
             examsArray.sort((a,b) => { let timeA = a.createdAt ? a.createdAt.toMillis() : Date.now(); let timeB = b.createdAt ? b.createdAt.toMillis() : Date.now(); return timeB - timeA; });
             
+            // إرسال إشعار لو في امتحان جديد نزل من أقل من 10 ثواني
+            snap.docChanges().forEach(change => {
+                if (change.type === "added" && !currentUserIsAdmin) {
+                    const data = change.doc.data();
+                    if (data.createdAt && (Date.now() - data.createdAt.toMillis() < 10000)) { sendNotification("امتحان جديد! ⏱️", `تم إضافة امتحان: ${data.title}`); }
+                }
+            });
+
             let html = '';
             examsArray.forEach(ex => {
                 const exId = ex.id; 
                 const adminBtn = currentUserIsAdmin ? `<div class="admin-controls-strip" style="justify-content:space-between;"><button class="btn-accept" style="width:auto; padding:5px 15px; border-radius:8px;" onclick="openViews('exams','${exId}')">👁️ المشاهدات</button><button class="delete-btn" style="border-radius:8px;" onclick="deleteDocument('exams', '${exId}')">مسح 🗑️</button></div>` : '';
-                
-                let canRetake = ex.allowRetake || false;
-                if (customRetakes[exId] !== undefined) canRetake = customRetakes[exId]; 
+                let canRetake = ex.allowRetake || false; if (customRetakes[exId] !== undefined) canRetake = customRetakes[exId]; 
 
                 let actionBtn = '';
                 if (submittedIds.includes(exId)) {
-                    if (currentUserIsAdmin || canRetake) {
-                        actionBtn = `<div style="display:flex; gap:10px;"><button class="btn-primary" style="flex:1; background:#10b981; font-size:16px;" onclick="showAttempts('${exId}')">👀 الاطلاع على التصحيح</button><button class="btn-primary" style="flex:1; background:#ff9800; font-size:16px;" onclick="startExam('${exId}')">🔄 إعادة الامتحان</button></div>`;
-                    } else {
-                        actionBtn = `<div style="display:flex; gap:10px;"><button class="btn-view" style="flex:1; opacity:0.8; font-size:16px;" disabled>✅ تم التسليم</button><button class="btn-primary" style="flex:1; background:#10b981; font-size:16px;" onclick="showAttempts('${exId}')">👀 التصحيح</button></div>`;
-                    }
-                } else {
-                    actionBtn = `<button class="btn-primary" style="width:100%; font-size:18px;" onclick="startExam('${exId}')">بدء الامتحان 🚀</button>`;
-                }
+                    if (currentUserIsAdmin || canRetake) { actionBtn = `<div style="display:flex; gap:10px;"><button class="btn-primary" style="flex:1; background:#10b981; font-size:16px;" onclick="showAttempts('${exId}')">👀 التصحيح</button><button class="btn-primary" style="flex:1; background:#ff9800; font-size:16px;" onclick="startExam('${exId}')">🔄 إعادة</button></div>`; } 
+                    else { actionBtn = `<div style="display:flex; gap:10px;"><button class="btn-view" style="flex:1; opacity:0.8; font-size:16px;" disabled>✅ تم التسليم</button><button class="btn-primary" style="flex:1; background:#10b981; font-size:16px;" onclick="showAttempts('${exId}')">👀 التصحيح</button></div>`; }
+                } else { actionBtn = `<button class="btn-primary" style="width:100%; font-size:18px;" onclick="startExam('${exId}')">بدء الامتحان 🚀</button>`; }
 
                 html += `<div class="post-card">${adminBtn}<div class="post-content" style="text-align:center;"><h3 style="color:var(--primary); margin-bottom:15px; font-size:22px;">📋 ${ex.title}</h3><div style="font-weight:bold; color:var(--text-dark); margin-bottom:20px; background:var(--input-bg); padding:15px; border-radius:12px;"><div>⏱️ مدة الامتحان: <span style="color:var(--secondary);">${ex.timeLimit} دقيقة</span></div><div style="margin-top:10px;">❓ الأسئلة: <span style="color:var(--blue-strip);">${ex.questions.length} سؤال</span></div></div>${actionBtn}</div></div>`;
             });
@@ -650,34 +641,9 @@
         
         currentExam.questions.forEach((q, i) => {
             let studentAnsText = "لم تتم الإجابة"; let isCorrect = false; let correctAnsText = "";
-            
-            if(q.type === 'mcq') { 
-                totalAutoGraded++; 
-                const sel = document.querySelector(`input[name="ex-q-${i}"]:checked`); 
-                correctAnsText = q.options[q.correctOption]; 
-                if(sel) { 
-                    studentAnsText = q.options[parseInt(sel.value)]; 
-                    if(parseInt(sel.value) === q.correctOption) isCorrect = true; 
-                } 
-            } 
-            else if(q.type === 'rewrite' || q.type === 'text') { 
-                totalAutoGraded++; 
-                const ansInput = document.getElementById(`ex-q-${i}`).value.trim(); 
-                if(ansInput) studentAnsText = ansInput; 
-                correctAnsText = q.correctText; 
-                // تظبيط المسافات عشان لو داس مسافة بالغلط
-                const ansNorm = studentAnsText.toLowerCase().replace(/\s+/g, ' ').trim(); 
-                const corrNorm = correctAnsText.toLowerCase().replace(/\s+/g, ' ').trim(); 
-                if(ansNorm === corrNorm && studentAnsText !== "لم تتم الإجابة") isCorrect = true; 
-            } 
-            else { 
-                const ansInput = document.getElementById(`ex-q-${i}`).value.trim(); 
-                if(ansInput) studentAnsText = ansInput; 
-                correctAnsText = "مراجعة المستر"; 
-                isCorrect = null; 
-            }
-            
-            // السطر اللي كان ناقص، دلوقتي شغال 100%
+            if(q.type === 'mcq') { totalAutoGraded++; const sel = document.querySelector(`input[name="ex-q-${i}"]:checked`); correctAnsText = q.options[q.correctOption]; if(sel) { studentAnsText = q.options[parseInt(sel.value)]; if(parseInt(sel.value) === q.correctOption) isCorrect = true; } } 
+            else if(q.type === 'rewrite' || q.type === 'text') { totalAutoGraded++; const ansInput = document.getElementById(`ex-q-${i}`).value.trim(); if(ansInput) studentAnsText = ansInput; correctAnsText = q.correctText; const ansNorm = ansInput.toLowerCase().replace(/\s+/g, ' ').trim(); const corrNorm = correctAnsText.toLowerCase().replace(/\s+/g, ' ').trim(); if(ansNorm === corrNorm && studentAnsText !== "لم تتم الإجابة") isCorrect = true; } 
+            else { const ansInput = document.getElementById(`ex-q-${i}`).value.trim(); if(ansInput) studentAnsText = ansInput; correctAnsText = "مراجعة المستر"; isCorrect = null; }
             if (isCorrect === true) { score++; }
             studentSavedAnswers.push(studentAnsText); 
         });
@@ -687,14 +653,8 @@
 
         const newResultRef = await db.collection('exam_results').add({ examId: currentExam.id, username: currentUserName, score, totalAutoGraded, answers: studentSavedAnswers, submittedAt: firebase.firestore.FieldValue.serverTimestamp() });
         
-        if (isFirstAttempt && !currentUserIsAdmin) {
-            const userRef = await db.collection('users').where('username','==',currentUserName).get(); 
-            if(!userRef.empty) await db.collection('users').doc(userRef.docs[0].id).update({score: firebase.firestore.FieldValue.increment(score)});
-        }
-
-        document.getElementById('liveExamModal').style.display = 'none'; 
-        renderSpecificResult(currentExam.id, newResultRef.id, currentUserName);
-        currentExam = null;
+        if (isFirstAttempt && !currentUserIsAdmin) { const userRef = await db.collection('users').where('username','==',currentUserName).get(); if(!userRef.empty) await db.collection('users').doc(userRef.docs[0].id).update({score: firebase.firestore.FieldValue.increment(score)}); }
+        document.getElementById('liveExamModal').style.display = 'none'; renderSpecificResult(currentExam.id, newResultRef.id, currentUserName); currentExam = null;
     }
 
     async function showAttempts(exId) {
@@ -739,27 +699,50 @@
         document.getElementById('resultContent').innerHTML = `<div style="text-align:center; margin-bottom:30px; background:var(--card-bg); padding:20px; border-radius:15px; box-shadow:0 4px 10px rgba(0,0,0,0.1);"><h2 style="color:var(--primary); font-weight:900; font-size:24px; margin-bottom:10px;">${headerTitle}</h2><div style="font-size:35px; font-weight:900; color:#10b981;">${result.score} <span style="font-size:20px;">من ${result.totalAutoGraded}</span></div></div>${resultHtml}<button class="btn-primary" style="margin-top:20px;" onclick="closeModal('resultModal');">العودة 🔙</button>`;
     }
 
-
-    // --- النشر (أخبار، أسئلة، واجبات) ---
+    // --- النشر والإشعارات الحية ---
     async function publishNews() { const text=document.getElementById('newsText').value; if(text){ await db.collection('news').add({text, createdAt:firebase.firestore.FieldValue.serverTimestamp()}); document.getElementById('newsText').value=''; alert('تم النشر'); } }
-    function loadNews() { db.collection('news').orderBy('createdAt','desc').onSnapshot(snap=>{ const c=document.getElementById('newsContainer'); c.innerHTML=''; if(snap.empty) c.innerHTML='<div class="empty-state">لا يوجد أخبار</div>'; snap.forEach(doc=>{ const d = doc.data(); markAsSeen('news', doc.id, d.seenBy); const ad=currentUserIsAdmin?`<div style="display:flex; gap:5px;"><button class="btn-accept" style="padding:5px 10px; font-size:12px; border-radius:5px;" onclick="openViews('news','${doc.id}')">👁️ المشاهدات</button><button class="delete-btn" style="padding:5px 10px; font-size:12px; border-radius:5px;" onclick="deleteDocument('news','${doc.id}')">مسح</button></div>`:''; c.insertAdjacentHTML('beforeend',`<div class="news-card"><div style="display:flex; justify-content:space-between; font-weight:900; margin-bottom:10px;"><span>🔴 تنبيه هام</span>${ad}</div><p style="font-size:16px; font-weight:bold; line-height:1.6;">${d.text}</p></div>`); }); }); }
+    function loadNews() { 
+        db.collection('news').orderBy('createdAt','desc').onSnapshot(snap=>{ 
+            const c=document.getElementById('newsContainer'); c.innerHTML=''; if(snap.empty) c.innerHTML='<div class="empty-state">لا يوجد أخبار</div>'; 
+            snap.forEach(doc=>{ const d = doc.data(); markAsSeen('news', doc.id, d.seenBy); const ad=currentUserIsAdmin?`<div style="display:flex; gap:5px;"><button class="btn-accept" style="padding:5px 10px; font-size:12px; border-radius:5px;" onclick="openViews('news','${doc.id}')">👁️ المشاهدات</button><button class="delete-btn" style="padding:5px 10px; font-size:12px; border-radius:5px;" onclick="deleteDocument('news','${doc.id}')">مسح</button></div>`:''; c.insertAdjacentHTML('beforeend',`<div class="news-card"><div style="display:flex; justify-content:space-between; font-weight:900; margin-bottom:10px;"><span>🔴 تنبيه هام</span>${ad}</div><p style="font-size:16px; font-weight:bold; line-height:1.6;">${d.text}</p></div>`); }); 
+            snap.docChanges().forEach(change => { if (change.type === "added" && !currentUserIsAdmin) { const data = change.doc.data(); if (data.createdAt && (Date.now() - data.createdAt.toMillis() < 10000)) { sendNotification("خبر عاجل 🔴", data.text); } } });
+        }); 
+    }
     
     async function publishQuiz() { const q=document.getElementById('quizQ').value; const a=document.getElementById('quizA').value; if(q&&a){ await db.collection('quizzes').add({question:q, answer:a, createdAt:firebase.firestore.FieldValue.serverTimestamp()}); document.getElementById('quizQ').value=''; document.getElementById('quizA').value=''; alert('تم'); } }
-    function loadQuizzes() { db.collection('quizzes').orderBy('createdAt','desc').onSnapshot(snap=>{ const c=document.getElementById('quizContainer'); c.innerHTML=''; if(snap.empty) c.innerHTML='<div class="empty-state">لا يوجد أسئلة</div>'; snap.forEach(doc=>{ const d=doc.data(); markAsSeen('quizzes', doc.id, d.seenBy); const ad=currentUserIsAdmin?`<div style="display:flex; justify-content:space-between; margin-bottom:10px;"><button class="btn-accept" style="padding:5px 15px; border-radius:8px;" onclick="openViews('quizzes','${doc.id}')">👁️ المشاهدات</button><button class="delete-btn" onclick="deleteDocument('quizzes','${doc.id}')">مسح</button></div>`:''; if(answeredQuizzes.includes(doc.id)||currentUserIsAdmin){ c.insertAdjacentHTML('beforeend',`<div class="quiz-card">${ad}<div style="font-size:18px; font-weight:900; margin-bottom:10px;">❓ ${d.question}</div><div class="quiz-ans-box">✅ الإجابة: ${d.answer}</div></div>`); } else { c.insertAdjacentHTML('beforeend',`<div class="quiz-card" id="q-${doc.id}"><div style="font-size:18px; font-weight:900; margin-bottom:10px; color:var(--primary);">❓ ${d.question}</div><input type="text" id="ans-${doc.id}" placeholder="اكتب الإجابة..." style="margin-bottom:10px;"><button class="btn-primary" onclick="submitAns('${doc.id}','${d.answer}')">إرسال</button></div>`); } }); }); }
+    function loadQuizzes() { 
+        db.collection('quizzes').orderBy('createdAt','desc').onSnapshot(snap=>{ 
+            const c=document.getElementById('quizContainer'); c.innerHTML=''; if(snap.empty) c.innerHTML='<div class="empty-state">لا يوجد أسئلة</div>'; 
+            snap.forEach(doc=>{ const d=doc.data(); markAsSeen('quizzes', doc.id, d.seenBy); const ad=currentUserIsAdmin?`<div style="display:flex; justify-content:space-between; margin-bottom:10px;"><button class="btn-accept" style="padding:5px 15px; border-radius:8px;" onclick="openViews('quizzes','${doc.id}')">👁️ المشاهدات</button><button class="delete-btn" onclick="deleteDocument('quizzes','${doc.id}')">مسح</button></div>`:''; if(answeredQuizzes.includes(doc.id)||currentUserIsAdmin){ c.insertAdjacentHTML('beforeend',`<div class="quiz-card">${ad}<div style="font-size:18px; font-weight:900; margin-bottom:10px;">❓ ${d.question}</div><div class="quiz-ans-box">✅ الإجابة: ${d.answer}</div></div>`); } else { c.insertAdjacentHTML('beforeend',`<div class="quiz-card" id="q-${doc.id}"><div style="font-size:18px; font-weight:900; margin-bottom:10px; color:var(--primary);">❓ ${d.question}</div><input type="text" id="ans-${doc.id}" placeholder="اكتب الإجابة..." style="margin-bottom:10px;"><button class="btn-primary" onclick="submitAns('${doc.id}','${d.answer}')">إرسال</button></div>`); } }); 
+            snap.docChanges().forEach(change => { if (change.type === "added" && !currentUserIsAdmin) { const data = change.doc.data(); if (data.createdAt && (Date.now() - data.createdAt.toMillis() < 10000)) { sendNotification("سؤال اليوم ❓", data.question); } } });
+        }); 
+    }
     async function submitAns(id, correct) { const ans=document.getElementById(`ans-${id}`).value.trim(); if(!ans) return; answeredQuizzes.push(id); localStorage.setItem('answeredQuizzes', JSON.stringify(answeredQuizzes)); if(ans.toLowerCase()===correct.trim().toLowerCase()){ alert('صح! كسبت نقطة'); const ur=await db.collection('users').where('username','==',currentUserName).get(); if(!ur.empty) await db.collection('users').doc(ur.docs[0].id).update({score:firebase.firestore.FieldValue.increment(1)}); } else alert('خطأ! الإجابة هي: '+correct); loadQuizzes(); }
     
     function openLeaderboard() { db.collection('users').orderBy('score','desc').limit(10).get().then(snap=>{ const list=document.getElementById('leaderboardList'); list.innerHTML=''; let r=1; snap.forEach(d=>{ const u=d.data(); if(u.username==='Admin' || u.username === 'Admrtaha' || u.score===0) return; let m=r===1?'🥇':r===2?'🥈':r===3?'🥉':'🎖️'; list.insertAdjacentHTML('beforeend',`<div style="display:flex; justify-content:space-between; padding:15px; border-bottom:1px solid var(--border-color); font-weight:bold;"><span>${m} ${u.username}</span><span style="color:var(--accent);">${u.score} نقطة</span></div>`); r++; }); if(list.innerHTML==='') list.innerHTML='<div class="empty-state">لا نقاط حتى الآن</div>'; document.getElementById('leaderboardModal').style.display='flex'; }); }
 
     async function publishPost() { const d=document.getElementById('customPostDate').value; const t=document.getElementById('postTasmee3').value; const h=document.getElementById('postHal').value; if(d){ await db.collection('posts').add({dateText:d, tasmee3:t, hal:h, createdAt:firebase.firestore.FieldValue.serverTimestamp()}); document.getElementById('customPostDate').value=''; document.getElementById('postTasmee3').value=''; document.getElementById('postHal').value=''; alert('تم'); } }
-    function loadPosts() { db.collection('posts').orderBy('createdAt','desc').onSnapshot(snap=>{ const c=document.getElementById('feedContainer'); c.innerHTML=''; snap.forEach(doc=>{ const d=doc.data(); markAsSeen('posts', doc.id, d.seenBy); const ad=currentUserIsAdmin?`<div class="admin-controls-strip" style="justify-content:space-between;"><button class="btn-accept" style="width:auto; border-radius:8px; padding:5px 15px;" onclick="openViews('posts','${doc.id}')">👁️ المشاهدات</button><button class="delete-btn" style="border-radius:8px;" onclick="deleteDocument('posts','${doc.id}')">مسح الواجب 🗑️</button></div>`:''; c.insertAdjacentHTML('beforeend',`<div class="post-card">${ad}<div class="post-date">${d.dateText}</div><div class="post-content">${d.tasmee3?`<div class="post-box"><span class="badge bg-blue">تسميع</span><div class="box-text">${d.tasmee3}</div></div>`:''}${d.hal?`<div class="post-box"><span class="badge bg-red">حل</span><div class="box-text">${d.hal}</div></div>`:''}</div></div>`); }); }); }
+    function loadPosts() { 
+        db.collection('posts').orderBy('createdAt','desc').onSnapshot(snap=>{ 
+            const c=document.getElementById('feedContainer'); c.innerHTML=''; 
+            snap.forEach(doc=>{ const d=doc.data(); markAsSeen('posts', doc.id, d.seenBy); const ad=currentUserIsAdmin?`<div class="admin-controls-strip" style="justify-content:space-between;"><button class="btn-accept" style="width:auto; border-radius:8px; padding:5px 15px;" onclick="openViews('posts','${doc.id}')">👁️ المشاهدات</button><button class="delete-btn" style="border-radius:8px;" onclick="deleteDocument('posts','${doc.id}')">مسح الواجب 🗑️</button></div>`:''; c.insertAdjacentHTML('beforeend',`<div class="post-card">${ad}<div class="post-date">${d.dateText}</div><div class="post-content">${d.tasmee3?`<div class="post-box"><span class="badge bg-blue">تسميع</span><div class="box-text">${d.tasmee3}</div></div>`:''}${d.hal?`<div class="post-box"><span class="badge bg-red">حل</span><div class="box-text">${d.hal}</div></div>`:''}</div></div>`); }); 
+            snap.docChanges().forEach(change => { if (change.type === "added" && !currentUserIsAdmin) { const data = change.doc.data(); if (data.createdAt && (Date.now() - data.createdAt.toMillis() < 10000)) { sendNotification("واجب جديد 📝", `تم إضافة واجب: ${data.dateText}`); } } });
+        }); 
+    }
 
     // --- السبورة (الصور) ---
     function handleImageSelect(e) { const f=e.target.files[0]; if(f) { const r=new FileReader(); r.readAsDataURL(f); r.onload=ev=>{ const img=new Image(); img.src=ev.target.result; img.onload=()=>{ const cv=document.createElement('canvas'); const ctx=cv.getContext('2d'); cv.width=img.width>1600?1600:img.width; cv.height=img.height*(cv.width/img.width); ctx.drawImage(img,0,0,cv.width,cv.height); base64ImageToUpload=cv.toDataURL('image/jpeg',0.85); document.getElementById('previewImage').src=base64ImageToUpload; document.getElementById('boardPreviewCard').style.display='block'; document.getElementById('boardPreviewCard').scrollIntoView(); }}}}
     function cancelBoardUpload() { base64ImageToUpload=""; document.getElementById('boardPreviewCard').style.display='none'; }
     async function confirmBoardUpload() { const d=document.getElementById('boardCustomDate').value; if(d&&base64ImageToUpload){ await db.collection('board_requests').add({uploaderName:currentUserName, dateText:d, image:base64ImageToUpload, status:currentUserIsAdmin?'accepted':'pending', createdAt:firebase.firestore.FieldValue.serverTimestamp()}); cancelBoardUpload(); alert(currentUserIsAdmin?'تم!':'قيد المراجعة.'); } }
-    function loadBoardPosts() { db.collection('board_requests').orderBy('createdAt','desc').onSnapshot(snap=>{ const c=document.getElementById('boardFeedContainer'); c.innerHTML=''; snap.forEach(doc=>{ const d=doc.data(); if(d.status==='accepted'){ markAsSeen('board_requests', doc.id, d.seenBy); const ad=currentUserIsAdmin?`<div class="admin-controls-strip" style="justify-content:space-between;"><button class="btn-accept" style="width:auto; border-radius:8px; padding:5px 15px;" onclick="openViews('board_requests','${doc.id}')">👁️ المشاهدات</button><button class="delete-btn" style="border-radius:8px;" onclick="deleteDocument('board_requests','${doc.id}')">مسح 🗑️</button></div>`:''; c.insertAdjacentHTML('beforeend',`<div class="post-card">${ad}<div class="board-header"><span>من: ${d.uploaderName}</span><span style="font-size:12px; background:var(--input-bg); padding:5px; border-radius:5px;">${d.dateText}</span></div><img src="${d.image}" class="board-img" onclick="document.getElementById('modalImg').src='${d.image}'; document.getElementById('imageModal').style.display='flex';"><div class="board-actions"><button class="btn-view" style="flex:1; padding:10px; border-radius:10px; background:var(--input-bg); color:var(--text-dark); border:none; font-weight:bold;" onclick="document.getElementById('modalImg').src='${d.image}'; document.getElementById('imageModal').style.display='flex';">👁️ مشاهدة</button><a href="${d.image}" download="Board.jpg" style="flex:1; padding:10px; border-radius:10px; background:var(--blue-strip); color:white; text-align:center; text-decoration:none; font-weight:bold;">⬇️ تحميل</a></div></div>`); }}); }); }
+    function loadBoardPosts() { 
+        db.collection('board_requests').orderBy('createdAt','desc').onSnapshot(snap=>{ 
+            const c=document.getElementById('boardFeedContainer'); c.innerHTML=''; 
+            snap.forEach(doc=>{ const d=doc.data(); if(d.status==='accepted'){ markAsSeen('board_requests', doc.id, d.seenBy); const ad=currentUserIsAdmin?`<div class="admin-controls-strip" style="justify-content:space-between;"><button class="btn-accept" style="width:auto; border-radius:8px; padding:5px 15px;" onclick="openViews('board_requests','${doc.id}')">👁️ المشاهدات</button><button class="delete-btn" style="border-radius:8px;" onclick="deleteDocument('board_requests','${doc.id}')">مسح 🗑️</button></div>`:''; c.insertAdjacentHTML('beforeend',`<div class="post-card">${ad}<div class="board-header"><span>من: ${d.uploaderName}</span><span style="font-size:12px; background:var(--input-bg); padding:5px; border-radius:5px;">${d.dateText}</span></div><img src="${d.image}" class="board-img" onclick="document.getElementById('modalImg').src='${d.image}'; document.getElementById('imageModal').style.display='flex';"><div class="board-actions"><button class="btn-view" style="flex:1; padding:10px; border-radius:10px; background:var(--input-bg); color:var(--text-dark); border:none; font-weight:bold;" onclick="document.getElementById('modalImg').src='${d.image}'; document.getElementById('imageModal').style.display='flex';">👁️ مشاهدة</button><a href="${d.image}" download="Board.jpg" style="flex:1; padding:10px; border-radius:10px; background:var(--blue-strip); color:white; text-align:center; text-decoration:none; font-weight:bold;">⬇️ تحميل</a></div></div>`); }}); 
+            snap.docChanges().forEach(change => { if (change.type === "added" && !currentUserIsAdmin) { const data = change.doc.data(); if (data.status==='accepted' && data.createdAt && (Date.now() - data.createdAt.toMillis() < 10000)) { sendNotification("صورة جديدة للسبورة 🖼️", `من: ${data.uploaderName}`); } } });
+        }); 
+    }
 
-    // --- إدارة الحسابات (مع زر الامتحانات والاستثناءات) ---
+    // --- إدارة الحسابات والاستثناءات ---
     function loadAllAccounts() { 
         db.collection('users').orderBy('createdAt','desc').onSnapshot(snap=>{ 
             const c=document.getElementById('accountsContainer'); c.innerHTML=''; 
@@ -768,52 +751,24 @@
                 const isBan=u.status==='banned'; 
                 const bBtn=isBan?`<button class="btn-accept" style="flex:1; padding:8px;" onclick="updateDocStatus('users','${doc.id}','accepted')">فك الحظر</button>`:`<button class="btn-reject" style="flex:1; padding:8px;" onclick="document.getElementById('banUserId').value='${doc.id}'; document.getElementById('banModal').style.display='flex';">حظر</button>`; 
                 const examsBtn = `<button class="btn-primary" style="flex:1; background:#3b82f6; padding:8px;" onclick="manageUserExams('${doc.id}', '${u.username}')">الامتحانات</button>`;
-                
                 c.insertAdjacentHTML('beforeend',`<div class="post-card" style="padding:15px;"><div style="font-size:18px; font-weight:bold; color:var(--primary); margin-bottom:10px;">${u.username} ${isBan?'🚫':''}</div><div style="background:var(--input-bg); padding:8px; border-radius:8px; font-family:monospace; margin-bottom:10px;">🔑 ${u.password}</div><div style="font-size:14px; margin-bottom:10px;">النقاط: ${u.score||0} | الحالة: ${u.status==='pending'?'انتظار':u.status==='accepted'?'مقبول':'محظور'}</div><div class="action-btns" style="gap:5px;">${bBtn}${examsBtn}<button class="btn-reject" style="flex:1; background:#475569; padding:8px;" onclick="deleteDocument('users','${doc.id}')">إزالة</button></div></div>`); 
             }); 
         }); 
     }
-
     async function manageUserExams(userId, username) {
-        document.getElementById('manageExamsStudentName').innerText = username;
-        document.getElementById('userExamsModal').style.display = 'flex';
-        const list = document.getElementById('userExamsList');
-        list.innerHTML = '<div style="text-align:center; padding:20px; font-weight:bold;">جاري التحميل... ⏳</div>';
-
-        const userDoc = await db.collection('users').doc(userId).get();
-        const customRetakes = userDoc.data().customRetakes || {};
-
+        document.getElementById('manageExamsStudentName').innerText = username; document.getElementById('userExamsModal').style.display = 'flex';
+        const list = document.getElementById('userExamsList'); list.innerHTML = '<div style="text-align:center; padding:20px; font-weight:bold;">جاري التحميل... ⏳</div>';
+        const userDoc = await db.collection('users').doc(userId).get(); const customRetakes = userDoc.data().customRetakes || {};
         db.collection('exams').orderBy('createdAt', 'desc').get().then(snap => {
-            list.innerHTML = '';
-            if(snap.empty) { list.innerHTML = '<div class="empty-state">لا توجد امتحانات</div>'; return; }
+            list.innerHTML = ''; if(snap.empty) { list.innerHTML = '<div class="empty-state">لا توجد امتحانات</div>'; return; }
             snap.forEach(doc => {
-                const ex = doc.data(); const exId = doc.id;
-                let canRetake = ex.allowRetake || false;
+                const ex = doc.data(); const exId = doc.id; let canRetake = ex.allowRetake || false;
                 if (customRetakes[exId] !== undefined) canRetake = customRetakes[exId]; 
-                
-                list.insertAdjacentHTML('beforeend', `
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid var(--border-color);">
-                        <div style="font-weight:bold; color:var(--text-dark);">${ex.title}</div>
-                        <label style="display:flex; align-items:center; cursor:pointer;">
-                            <span style="font-size:12px; color:#666; margin-left:8px;">إعادة</span>
-                            <input type="checkbox" style="width:20px; height:20px;" ${canRetake ? 'checked' : ''} onchange="toggleUserRetake('${userId}', '${exId}', this.checked)">
-                        </label>
-                    </div>
-                `);
+                list.insertAdjacentHTML('beforeend', `<div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid var(--border-color);"><div style="font-weight:bold; color:var(--text-dark);">${ex.title}</div><label style="display:flex; align-items:center; cursor:pointer;"><span style="font-size:12px; color:#666; margin-left:8px;">إعادة</span><input type="checkbox" style="width:20px; height:20px;" ${canRetake ? 'checked' : ''} onchange="toggleUserRetake('${userId}', '${exId}', this.checked)"></label></div>`);
             });
         });
     }
-
-    async function toggleUserRetake(userId, exId, isChecked) {
-        try {
-            const userRef = db.collection('users').doc(userId);
-            const userDoc = await userRef.get();
-            let customRetakes = userDoc.data().customRetakes || {};
-            customRetakes[exId] = isChecked;
-            await userRef.update({ customRetakes: customRetakes });
-        } catch(e) { console.error(e); alert('حدث خطأ أثناء الحفظ'); }
-    }
-
+    async function toggleUserRetake(userId, exId, isChecked) { try { const userRef = db.collection('users').doc(userId); const userDoc = await userRef.get(); let customRetakes = userDoc.data().customRetakes || {}; customRetakes[exId] = isChecked; await userRef.update({ customRetakes: customRetakes }); } catch(e) { alert('حدث خطأ'); } }
     async function confirmBan() { const id=document.getElementById('banUserId').value; const t=document.getElementById('banType').value; let d=null; if(t==='temp'){ const days=parseInt(document.getElementById('banDays').value); if(!days)return; d=Date.now()+(days*86400000); } await db.collection('users').doc(id).update({status:'banned', banUntil:d}); closeModal('banModal'); }
     function loadBoardRequests() { db.collection('board_requests').where('status','==','pending').onSnapshot(snap=>{ const c=document.getElementById('boardRequestsContainer'); c.innerHTML=''; snap.forEach(doc=>{ const d=doc.data(); c.insertAdjacentHTML('beforeend',`<div class="post-card" style="border:2px solid var(--accent);"><div class="board-header"><span>من: ${d.uploaderName}</span></div><img src="${d.image}" class="board-img"><div class="action-btns" style="padding:15px;"><button class="btn-accept" onclick="updateDocStatus('board_requests','${doc.id}','accepted')">قبول</button><button class="btn-reject" onclick="deleteDocument('board_requests','${doc.id}',false)">رفض</button></div></div>`); }); }); }
     function loadRequests() { db.collection('users').where('status','==','pending').onSnapshot(snap=>{ const c=document.getElementById('requestsContainer'); c.innerHTML=''; snap.forEach(doc=>{ c.insertAdjacentHTML('beforeend',`<div class="post-box" style="margin-top:10px;"><strong>${doc.data().username}</strong><div class="action-btns"><button class="btn-accept" onclick="updateDocStatus('users','${doc.id}','accepted')">قبول</button><button class="btn-reject" onclick="deleteDocument('users','${doc.id}',false)">رفض</button></div></div>`); }); }); }
